@@ -16,7 +16,7 @@
 
 ```bash
 # 1. 克隆仓库
-git clone <your-repo-url> fe-skills
+git clone git@github.com:Jsmond2016/fe-skills.git fe-skills
 cd fe-skills
 
 # 2. 运行安装脚本
@@ -127,7 +127,7 @@ fe-skills/
 在其他电脑上：
 
 ```bash
-git clone <your-repo-url> fe-skills
+git clone git@github.com:Jsmond2016/fe-skills.git fe-skills
 cd fe-skills
 ./install.sh
 ```
