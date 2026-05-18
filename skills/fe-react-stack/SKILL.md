@@ -1,5 +1,5 @@
 ---
-name: react-stack
+name: fe-react-stack
 description: React 全栈开发最佳实践 - 整合 React, ahooks, antd, TailwindCSS, Ramda, Jotai, TypeScript, Webpack/Vite, pnpm 等技术栈
 ---
 

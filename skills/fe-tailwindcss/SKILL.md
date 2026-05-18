@@ -1,5 +1,5 @@
 ---
-name: tailwindcss
+name: fe-tailwindcss
 description: TailwindCSS utility-first CSS framework for rapid UI development. Use when styling components, configuring TailwindCSS, working with utility classes, or integrating with React/Ant Design projects.
 ---
 
