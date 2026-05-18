@@ -1,0 +1,31 @@
+{
+  "name": "fe-skills",
+  "version": "1.0.0",
+  "description": "Frontend development skills for AI agents — compatible with npx skills add",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jsmond2016/fe-skills.git"
+  },
+  "keywords": [
+    "skills",
+    "claude",
+    "cursor",
+    "ai-agents",
+    "frontend"
+  ],
+  "author": "Jsmond2016",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Jsmond2016/fe-skills/issues"
+  },
+  "homepage": "https://github.com/Jsmond2016/fe-skills#readme",
+  "scripts": {
+    "create-skill": "node scripts/create-skill.js",
+    "validate": "node scripts/validate-skills.js",
+    "test": "npm run validate"
+  },
+  "devDependencies": {
+    "yaml": "^2.4.0"
+  }
+}

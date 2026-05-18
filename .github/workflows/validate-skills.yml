@@ -1,0 +1,32 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'skills/**'
+      - 'scripts/validate-skills.js'
+      - 'package.json'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'skills/**'
+      - 'scripts/validate-skills.js'
+      - 'package.json'
+
+jobs:
+  validate:
+    name: Validate Skill Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate skills
+        run: node scripts/validate-skills.js

@@ -15,10 +15,22 @@ Thumbs.db
 *.swo
 *~
 
-# 社区 skill 缓存（可选，如果需要缓存的话）
-# .community-cache/
-
 # 备份文件
 *.bak
 *.backup
 .backups/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 测试生成的临时 skill（开发时使用）
+skills/.test-*/
+
+# Claude Code 本地配置
+.claude/
