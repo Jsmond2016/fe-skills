@@ -61,6 +61,8 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 | [fe-react-dev-stack](./skills/fe-react-dev-stack) | React Dev Stack 开发规范（路由、状态管理、Hooks、UI、CSS、代码质量） |
 | [fe-react-stack](./skills/fe-react-stack) | React 全栈开发助手（React + ahooks + antd + TailwindCSS + Jotai + Ramda） |
 | [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
+| [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
+| [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包） |
 
 ## 开发
 
