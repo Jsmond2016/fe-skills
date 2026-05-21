@@ -35,3 +35,16 @@
 
 - Follow the existing ESLint / Prettier / Biome configuration
 - {{additionalRules}}
+
+## AI Collaboration
+
+This project maintains AI collaboration rules in [AGENTS.md](./AGENTS.md), covering:
+- Code review standards and security boundaries
+- Commit message conventions
+- AI coding constraints (complexity, comments, etc.)
+
+> AI Agent: Always read AGENTS.md alongside this file before starting work.
+
+## Architecture
+
+See [STACK_ARCHITECTURE.md](./STACK_ARCHITECTURE.md) for architecture decisions, data flow, and component hierarchy.

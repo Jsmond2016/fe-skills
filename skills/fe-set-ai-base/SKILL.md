@@ -1,6 +1,6 @@
 ---
 name: fe-set-ai-base
-description: AI 工程化配置初始化 — 自动检测项目并生成 CLAUDE.md、AGENTS.md、DESIGN.md，初始化 .claude/ 等 AI 协作配置。适用于未配置过 AI 上下文的项目。
+description: AI 工程化配置初始化 — 自动检测项目并生成 CLAUDE.md、AGENTS.md、STACK_ARCHITECTURE.md、DESIGN.md，初始化 .claude/ 等 AI 协作配置。适用于未配置过 AI 上下文的项目。
 ---
 
 # AI 工程化基础配置 (fe-set-ai-base)
@@ -42,7 +42,7 @@ turbo → "Turborepo",  prisma → "Prisma ORM"
 ### 1.3 检测已有 AI 配置
 
 ```bash
-for f in CLAUDE.md AGENTS.md DESIGN.md .claude .codex .cursor; do
+for f in CLAUDE.md AGENTS.md STACK_ARCHITECTURE.md DESIGN.md .claude .codex .cursor; do
   [ -e "$f" ] && echo "exists: $f" || echo "missing: $f"
 done
 ```
@@ -68,7 +68,9 @@ done
 
 ### 3.1 CLAUDE.md
 
-项目级 AI 指令文件。填充来源：
+项目级 AI 指令文件，作为 AI 理解项目的入口。包含项目介绍、技术栈、命令、规范约束等，同时引用 AGENTS.md（AI 协作规范）和 STACK_ARCHITECTURE.md（技术架构），三者形成互补。
+
+填充来源：
 
 | 字段 | 来源 |
 |:-----|:-----|
@@ -78,6 +80,8 @@ done
 | Structure | `ls` 目录结构快照 |
 | Conventions | lint 配置 + 常见命名约定 |
 
+CLAUDE.md 可直接引用 AGENTS.md 内容（如安全边界、编码规范等），避免重复；技术架构相关内容则引用 STACK_ARCHITECTURE.md。
+
 参考模板：`reference/CLAUDE.md.template`
 
 ### 3.2 AGENTS.md
@@ -86,13 +90,19 @@ AI 协作规范，跨工具通用。参考模板：`reference/AGENTS.md.template
 
 与 `fe-setup-basic-project-env` 的关系：如果项目已有 AGENTS.md（来自该 skill），merge 模式仅在末尾追加 AI 工具专属条目（Memory 管理、工具限制），不重复覆盖已有内容。
 
-### 3.3 DESIGN.md
+### 3.3 STACK_ARCHITECTURE.md
 
-架构设计文档，含 ADR（架构决策记录）。参考模板：`reference/DESIGN.md.template`
+技术架构文档，含 ADR（架构决策记录）。参考模板：`reference/STACK_ARCHITECTURE.md.template`
 
 生成策略：AI 填充检测到的目录结构、依赖、环境变量，架构描述部分标记为待人工完善。
 
-### 3.4 .claude/
+### 3.4 DESIGN.md
+
+UI 设计与交互规范文档。参考模板：`reference/DESIGN.md.template`
+
+包含：设计系统、组件规范、交互模式、视觉风格、无障碍要求等。AI 根据项目技术栈（如 Tailwind/Unocss 等 CSS 方案、UI 组件库）生成初始内容，标记为待设计团队补充。
+
+### 3.5 .claude/
 
 ```
 .claude/
@@ -137,10 +147,11 @@ mkdir -p .cursor/rules
 1. cd <target-project>
 2. 探测项目信息（package.json / 技术栈 / 已有 AI 配置）
 3. 逐个处理（每个文件独立走冲突处理）：
-   ├── CLAUDE.md  ← 填充探测结果
-   ├── AGENTS.md  ← AI 协作规范
-   ├── DESIGN.md  ← 架构文档模板
-   └── .claude/   ← settings.json + memory/
+   ├── CLAUDE.md            ← 填充探测结果（引用 AGENTS.md + STACK_ARCHITECTURE.md）
+   ├── AGENTS.md            ← AI 协作规范（与 CLAUDE.md 互补）
+   ├── STACK_ARCHITECTURE.md ← 技术架构文档
+   ├── DESIGN.md            ← UI 设计与交互规范
+   └── .claude/             ← settings.json + memory/
 4. 可选：.codex/ .cursor/
 5. 验证
 6. 建议提交：git commit -m "chore: initialize AI engineering configuration"
@@ -151,7 +162,7 @@ mkdir -p .cursor/rules
 ## 6. 验证清单
 
 ```bash
-for f in CLAUDE.md AGENTS.md DESIGN.md; do
+for f in CLAUDE.md AGENTS.md STACK_ARCHITECTURE.md DESIGN.md; do
   [ -f "$f" ] && echo "  ✅ $f ($(wc -l < "$f") 行)" || echo "  ⬜ $f 未创建"
 done
 if [ -d .claude ]; then
@@ -165,7 +176,8 @@ fi
 - [ ] 项目探测是否准确（技术栈、scripts、包管理器）
 - [ ] CLAUDE.md 命令是否可执行（来源于实际 scripts）
 - [ ] AGENTS.md 是否覆盖安全边界
-- [ ] DESIGN.md 是否包含 ADR 记录
+- [ ] STACK_ARCHITECTURE.md 是否包含 ADR 记录
+- [ ] DESIGN.md 是否覆盖 UI 设计规范
 - [ ] .claude/memory/MEMORY.md 是否已创建
 - [ ] 冲突处理策略是否正确执行
 - [ ] 是否提交 `.claude/` 到版本控制
