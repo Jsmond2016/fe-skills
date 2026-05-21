@@ -58,8 +58,7 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 | [fe-fullstack-dev](./skills/fe-fullstack-dev) | Full Stack Monorepo 全栈开发最佳实践 |
 | [fe-node-dev-stack](./skills/fe-node-dev-stack) | Node.js 开发栈实践 |
 | [fe-project-manager](./skills/fe-project-manager) | 项目管理与项目状态报告 |
-| [fe-react-dev-stack](./skills/fe-react-dev-stack) | React Dev Stack 开发规范（路由、状态管理、Hooks、UI、CSS、代码质量） |
-| [fe-react-stack](./skills/fe-react-stack) | React 全栈开发助手（React + ahooks + antd + TailwindCSS + Jotai + Ramda） |
+| [fe-react-dev-stack](./skills/fe-react-dev-stack) | React + TypeScript 脚手架与开发最佳实践（Vite + antd + ahooks + Zustand/Jotai + TailwindCSS + Ramda 可选） |
 | [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
 | [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
 | [fe-set-ai-base](./skills/fe-set-ai-base) | AI 工程化配置初始化（CLAUDE.md + AGENTS.md + DESIGN.md + .claude/） |
