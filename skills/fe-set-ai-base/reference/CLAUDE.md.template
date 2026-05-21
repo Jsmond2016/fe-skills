@@ -1,0 +1,37 @@
+# {{projectName}}
+
+{{projectDescription}}
+
+## Tech Stack
+
+- **Framework**: {{framework}}
+- **Language**: {{language}}
+- **Build Tool**: {{buildTool}}
+- **Styling**: {{cssSolution}}
+- **Testing**: {{testFramework}}
+- **Package Manager**: {{packageManager}}
+
+## Commands
+
+| Command | Description |
+|:--------|:------------|
+| `{{command}}` | {{description}} |
+
+## Project Structure
+
+```
+{{directoryTree}}
+```
+
+## Conventions
+
+- **Component naming**: {{convention}}
+- **File naming**: {{convention}}
+- **CSS approach**: {{cssConvention}}
+- **Import alias**: {{importAlias}}
+- **Lint**: {{lintTool}} with {{lintConfig}}
+
+## Code Style
+
+- Follow the existing ESLint / Prettier / Biome configuration
+- {{additionalRules}}

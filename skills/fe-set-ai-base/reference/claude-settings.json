@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": ["Bash", "Read", "Edit", "Write", "Agent", "NotebookEdit"],
+    "allowSaved": true
+  },
+  "hooks": {
+    "pre-commit": ["npm run lint-staged"],
+    "post-commit": []
+  }
+}
