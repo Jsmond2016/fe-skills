@@ -54,12 +54,12 @@ npm run validate       # / npm test — 校验所有 skill
 npx skills add fe-skills
 
 # 2. 一键同步到所有 AI 平台目录
-node .agent/sync-agent-skills/scripts/sync.js
+node .agent/sync-agent-skills/scripts/sync.cjs
 
 # 可选参数
-node .agent/sync-agent-skills/scripts/sync.js --dry-run      # 预览
-node .agent/sync-agent-skills/scripts/sync.js --platform claude  # 仅 Claude Code
-node .agent/sync-agent-skills/scripts/sync.js --copy          # 复制而非链接
+node .agent/sync-agent-skills/scripts/sync.cjs --dry-run      # 预览
+node .agent/sync-agent-skills/scripts/sync.cjs --platform claude  # 仅 Claude Code
+node .agent/sync-agent-skills/scripts/sync.cjs --copy          # 复制而非链接
 ```
 
 原理：`npx skills add` 将 `skills/sync-agent-skills/` 安装到 `.agent/sync-agent-skills/`，其 `scripts/sync.js` 可自动检测 `.agent/` 位置并扫描所有 skill，为每个已发现的 AI 平台目录创建 symlink。

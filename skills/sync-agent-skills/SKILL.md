@@ -2,7 +2,7 @@
 name: sync-agent-skills
 description: >-
   将 .agent/ 中已安装的 skills 同步到 AI 平台目录（.claude/skills/、.codex/skills/）。
-  安装后执行：node .agent/sync-agent-skills/scripts/sync.js
+  安装后执行：node .agent/sync-agent-skills/scripts/sync.cjs
 ---
 
 # sync-agent-skills
@@ -18,7 +18,7 @@ description: >-
 npx skills add fe-skills
 
 # 执行同步（链接到 .claude/skills/、.codex/skills/）
-node .agent/sync-agent-skills/scripts/sync.js
+node .agent/sync-agent-skills/scripts/sync.cjs
 ```
 
 ## 选项
