@@ -62,11 +62,12 @@ function getSkillNames(sourceDir) {
   return names.sort();
 }
 
+const ALL_PLATFORMS = ['claude', 'codex'];
+
 function detectPlatforms(root) {
-  const platforms = [];
-  if (fs.existsSync(path.join(root, '.claude'))) platforms.push('claude');
-  if (fs.existsSync(path.join(root, '.codex'))) platforms.push('codex');
-  return platforms;
+  // 默认同步所有平台，目录不存在会自动创建
+  // --platform 参数用于限制范围而非发现
+  return ALL_PLATFORMS;
 }
 
 // ── 同步 ──
@@ -139,7 +140,7 @@ function showHelp() {
 
   选项:
     --dry-run            预览变更，不实际执行
-    --platform <names>   仅同步指定平台，如 claude,codex（默认：自动检测）
+    --platform <names>   仅同步指定平台，如 claude,codex（默认：全部）
     --copy               复制而非符号链接
     --source <dir>       自定义源目录（默认：从脚本位置自动向上查找）
     --help, -h           显示此帮助
@@ -206,13 +207,8 @@ function main() {
   }
   console.log(`发现 ${skillNames.length} 个 skills`);
 
-  // ── 检测目标平台 ──
+  // ── 确定目标平台 ──
   const platforms = platformFilter || detectPlatforms(projectRoot);
-  if (platforms.length === 0) {
-    console.warn('⚠ 未检测到 AI 平台目录（.claude/、.codex/），也没有通过 --platform 指定。');
-    console.warn('  请先在项目中初始化 AI 工具配置，或使用 --platform 参数。');
-    process.exit(0);
-  }
 
   // ── 同步 ──
   let totalCreated = 0;
