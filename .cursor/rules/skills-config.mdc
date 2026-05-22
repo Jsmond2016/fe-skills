@@ -13,6 +13,13 @@ Configure Cursor Settings → Features → Skills Path and add the `skills` dire
 
 This enables all `fe-*` skills (code-review, commit, react-dev-stack, tailwindcss, etc.) in Cursor Composer and Agent mode.
 
+## Project Context
+
+- `CLAUDE.md` — 项目总览与命令
+- `AGENTS.md` — AI 协作规范
+- `STACK_ARCHITECTURE.md` — 技术架构与 ADR
+- `DESIGN.md` — UI 设计规范
+
 ## Available Skills
 
 - `fe-code-review` — 系统性代码审查
