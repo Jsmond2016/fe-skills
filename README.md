@@ -17,7 +17,17 @@
 npx skills add Jsmond2016/fe-skills
 ```
 
-这会在当前项目下创建 `.skills` 目录，Skill 仅在该项目中可用。
+这会在当前项目下创建 `.agents/skills` 目录，Skill 仅在该项目中可用。
+
+### 安装后的同步
+
+`npx skills add` 将 skills 安装到 `.agents/skills/` 目录，但 Claude Code 识别 `.claude/skills/`，Codex 识别 `.codex/skills/`。安装完成后，执行同步脚本一键链接到各 AI 平台目录：
+
+```bash
+node .agents/skills/sync-agent-skills/scripts/sync.cjs
+```
+
+该脚本会自动创建 `.claude/skills/` 和 `.codex/skills/`（如不存在），并为所有 skill 创建 symlink。
 
 ### 全局安装（所有项目）
 
@@ -61,6 +71,7 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 | [fe-react-dev-stack](./skills/fe-react-dev-stack) | React + TypeScript 脚手架与开发最佳实践（Vite + antd + ahooks + Zustand/Jotai + TailwindCSS + Ramda 可选） |
 | [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
 | [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
+| [sync-agent-skills](./skills/sync-agent-skills) | 将 `.agents/skills/` 中已安装的 skills 同步到 `.claude/skills/`、`.codex/skills/` |
 | [fe-set-ai-base](./skills/fe-set-ai-base) | AI 工程化配置初始化（CLAUDE.md + AGENTS.md + DESIGN.md + .claude/） |
 | [fe-setup-basic-project-env](./skills/fe-setup-basic-project-env) | 通用项目基础环境配置（pnpm + ESLint + Prettier + AGENTS.md） |
 | [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包）|
@@ -143,6 +154,10 @@ fe-skills/
 ├── skills/                  # Skill 集合
 │   ├── fe-code-review/      # 个人 skill（fe- / sys- 前缀）
 │   │   └── SKILL.md
+│   ├── sync-agent-skills/   # 工具 skill：.agents/ → AI 平台目录同步
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   │       └── sync.cjs
 │   ├── code-simplifier/     # 第三方 skill（通过 URL 导入）
 │   │   ├── SKILL.md         #   清洗后的跨平台格式
 │   │   ├── ORIGINAL.md      #   原始内容备份
