@@ -28,7 +28,9 @@
     "update-skills": "node scripts/update-skills.js",
     "remove-skill": "node scripts/remove-skill.js",
     "convert-skill": "node scripts/convert-skill.js",
-    "skill-status": "node scripts/skill-status.js"
+    "skill-status": "node scripts/skill-status.js",
+    "prepare": "node scripts/sync-agent-links.js",
+    "postinstall": "node scripts/sync-agent-links.js"
   },
   "devDependencies": {
     "yaml": "^2.4.0"

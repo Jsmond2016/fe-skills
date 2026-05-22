@@ -85,6 +85,9 @@ function createSkill(name, description) {
   const skillFilePath = path.join(skillDir, 'SKILL.md');
   fs.writeFileSync(skillFilePath, content, 'utf-8');
 
+  // Auto-sync agent symlinks
+  require('child_process').execSync('node scripts/sync-agent-links.js', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+
   console.log(`Created skill: ${name}`);
   console.log(`  Location: ${skillFilePath}`);
   console.log(`  Description: ${description}`);

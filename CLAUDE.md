@@ -37,6 +37,12 @@ npm run validate       # / npm test — 校验所有 skill
 
 设置 Cursor → Features → Skills Path，添加 `skills` 目录。
 
+## 自动同步
+
+`scripts/sync-agent-links.js` 在以下时机自动同步 symlink：
+- `npm run create-skill` / `add-skill` / `remove-skill` 执行后
+- `npm install` 或 `npm prepare` 执行时（含 `git clone` 后自动执行）
+
 ## Skill 规范
 
 - `skills/<name>/SKILL.md` — YAML frontmatter 含 `name`（kebab-case）+ `description`

@@ -457,6 +457,8 @@ function main() {
   }
 
   if (ok) {
+    // Auto-sync agent symlinks
+    execSync('node scripts/sync-agent-links.js', { stdio: 'inherit', cwd: ROOT });
     console.log(`\nDone! Run 'npm run validate' to verify all skills.`);
   }
 

@@ -81,6 +81,9 @@ function main() {
   writeManifest(manifest);
   console.log(`\nDone: ${removed} skill(s) removed.`);
   if (notFound) console.log(`Skipped: ${notFound} skill(s) not found.`);
+
+  // Auto-sync agent symlinks
+  require('child_process').execSync('node scripts/sync-agent-links.js', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
 }
 
 main();
