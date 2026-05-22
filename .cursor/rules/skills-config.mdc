@@ -1,0 +1,29 @@
+---
+description: This project's skills are in the ./skills/ directory. Configure Cursor Skills Path to point here for auto-completion and agent skill usage.
+globs:
+---
+
+# FE-Skills Configuration
+
+This repository contains frontend development skills for AI coding agents.
+
+## Skills Path
+
+Configure Cursor Settings → Features → Skills Path and add the `skills` directory relative to this project root.
+
+This enables all `fe-*` skills (code-review, commit, react-dev-stack, tailwindcss, etc.) in Cursor Composer and Agent mode.
+
+## Available Skills
+
+- `fe-code-review` — 系统性代码审查
+- `fe-commit` — Commit 提交规范与 Changelog 生成
+- `fe-react-dev-stack` — React + TypeScript 脚手架与开发
+- `fe-tailwindcss` — TailwindCSS 开发指南
+- `fe-fullstack-dev` — Full Stack 全栈开发
+- `fe-node-dev-stack` — Node.js 开发栈
+- `fe-project-manager` — 项目管理
+- `fe-set-ai-base` — AI 工程化配置初始化
+- `fe-setup-basic-project-env` — 通用项目环境配置
+- `fe-setup-vsc-config-plugin` — VS Code 扩展工程化配置
+- `fe-doc-format` — 文档编写规范化
+- `sys-port-manager` — 跨平台端口管理
