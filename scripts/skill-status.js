@@ -25,7 +25,7 @@ function main() {
   const manifest = readManifest();
   const vendorSkills = [];
 
-  // Collect from manifest
+  // Collect from manifest — github sources
   for (const [repo, entry] of Object.entries(manifest.github || {})) {
     for (const [name, info] of Object.entries(entry.installedSkills || {})) {
       const dir = path.join(SKILLS_DIR, name);
@@ -33,7 +33,24 @@ function main() {
       vendorSkills.push({
         name,
         source: repo,
+        type: 'github',
         commit: info.commit ? info.commit.slice(0, 8) : '?',
+        syncedAt: info.syncedAt,
+        exists,
+      });
+    }
+  }
+
+  // Collect from manifest — url sources
+  for (const [url, entry] of Object.entries(manifest.url || {})) {
+    for (const [name, info] of Object.entries(entry.installedSkills || {})) {
+      const dir = path.join(SKILLS_DIR, name);
+      const exists = fs.existsSync(dir);
+      vendorSkills.push({
+        name,
+        source: url,
+        type: 'url',
+        commit: null,
         syncedAt: info.syncedAt,
         exists,
       });
@@ -54,7 +71,11 @@ function main() {
   for (const s of vendorSkills) {
     const status = s.exists ? '✓' : '✗ (directory missing)';
     console.log(`  ${status} ${s.name}`);
-    console.log(`      source:  ${s.source}@${s.commit}`);
+    if (s.type === 'url') {
+      console.log(`      source:  ${s.source}`);
+    } else {
+      console.log(`      source:  ${s.source}@${s.commit}`);
+    }
     console.log(`      synced:  ${formatDate(s.syncedAt)}`);
     console.log();
   }

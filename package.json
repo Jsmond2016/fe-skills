@@ -27,6 +27,7 @@
     "add-skill": "node scripts/add-skill.js",
     "update-skills": "node scripts/update-skills.js",
     "remove-skill": "node scripts/remove-skill.js",
+    "convert-skill": "node scripts/convert-skill.js",
     "skill-status": "node scripts/skill-status.js"
   },
   "devDependencies": {

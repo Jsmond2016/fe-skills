@@ -9,38 +9,30 @@ const SKILLS_DIR = path.join(ROOT, 'skills');
 const MANIFEST_PATH = path.join(ROOT, 'skill-dependencies.json');
 const TEMP_PREFIX = '.sync-tmp-';
 
+// ── Help ──
+
 function showHelp() {
   console.log(`
 Usage:
-  npm run add-skill <org/repo>@<skill>    Install a specific skill from a multi-skill repo
-  npm run add-skill <org/repo>             Install all skills from a multi-skill repo, or a single-skill repo
+  npm run add-skill <org/repo>[@<skill>]     Install from GitHub repo
+  npm run add-skill <url>                     Install from any markdown URL
+  npm run add-skill <url> --name <name>       Install from URL with custom name
 
 Examples:
-  npm run add-skill antfu/skills@vue       Install the "vue" skill from antfu/skills
-  npm run add-skill antfu/skills           Install ALL skills from antfu/skills
-  npm run add-skill chen8254d/antd-skills  Install ant-design from its repo
+  npm run add-skill antfu/skills@vue          Install a specific skill from a repo
+  npm run add-skill antfu/skills              Install all skills from a repo
+  npm run add-skill chen8254d/antd-skills     Install a single-skill repo
+  npm run add-skill https://raw.githubusercontent.com/.../skill.md  Install from URL
 `);
 }
 
-// ---------- util ----------
-
-function parseArg(arg) {
-  if (!arg) return null;
-  const atIdx = arg.lastIndexOf('@');
-  if (atIdx > 0 && arg.includes('/')) {
-    return { repo: arg.slice(0, atIdx), skill: arg.slice(atIdx + 1) };
-  }
-  if (arg.includes('/')) {
-    return { repo: arg, skill: null };
-  }
-  return null;
-}
+// ── Utils ──
 
 function readManifest() {
   try {
     return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
   } catch {
-    return { version: 1, github: {} };
+    return { version: 2, github: {}, url: {} };
   }
 }
 
@@ -52,18 +44,78 @@ function getCommitHash(dir) {
   return execSync('git rev-parse HEAD', { cwd: dir }).toString().trim();
 }
 
-function getRepoName(repo) {
+function repoName(repo) {
   return repo.split('/')[1] || repo;
 }
 
-// ---------- git ----------
+function isUrl(s) {
+  return s.startsWith('http://') || s.startsWith('https://');
+}
+
+// ── GitHub blob URL → raw URL ──
+
+function toRawGithubUrl(url) {
+  const m = url.match(/^https?:\/\/github\.com\/([^/]+\/[^/]+)\/blob\/(.+)$/);
+  return m ? `https://raw.githubusercontent.com/${m[1]}/${m[2]}` : url;
+}
+
+// ── Frontmatter handling ──
+
+function parseFrontmatter(content) {
+  const m = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!m) return { frontmatter: {}, body: content };
+  const fm = {};
+  for (const line of m[1].split('\n')) {
+    const kv = line.match(/^(\w+):\s*(.+)$/);
+    if (kv) fm[kv[1]] = kv[2].trim();
+  }
+  return { frontmatter: fm, body: m[2].trim() };
+}
+
+function stringifyFrontmatter(fm) {
+  return '---\n' + Object.entries(fm)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('\n') + '\n---\n';
+}
+
+/**
+ * Strip fields that are model-specific (e.g. "model: opus" is Claude-only).
+ * Keep generic fields like name, description, version, author, license.
+ */
+function cleanFrontmatter(fm) {
+  const MODEL_SPECIFIC = ['model', 'model_name', 'provider'];
+  const clean = { ...fm };
+  for (const key of MODEL_SPECIFIC) delete clean[key];
+  // Remove metadata object entirely if it exists and is empty
+  // (we don't handle nested objects for simplicity)
+  return clean;
+}
+
+// ── Source detection ──
+
+function detectSource(arg) {
+  if (isUrl(arg)) return 'url';
+  // Also accept "@name" shortcut for well-known skills
+  if (arg.startsWith('@')) return 'wellknown';
+  // Has a slash → treat as GitHub repo
+  if (arg.includes('/')) return 'github';
+  return null;
+}
+
+function parseGithubArg(arg) {
+  const atIdx = arg.lastIndexOf('@');
+  if (atIdx > 0) {
+    return { repo: arg.slice(0, atIdx), skill: arg.slice(atIdx + 1) };
+  }
+  return { repo: arg, skill: null };
+}
+
+// ── GitHub cloning & discovery ──
 
 function cloneRepo(repo, dest) {
   const url = `https://github.com/${repo}.git`;
   execSync(`git clone --depth 1 ${url} "${dest}"`, { stdio: 'pipe' });
 }
-
-// ---------- skill discovery ----------
 
 function readFrontmatterName(skillMdPath) {
   try {
@@ -80,7 +132,7 @@ function readFrontmatterName(skillMdPath) {
 function findSkillsInRepo(repoDir) {
   const results = [];
 
-  // Mode A: multi-skill repo — skills/<name>/SKILL.md
+  // Multi-skill repo — skills/<name>/SKILL.md
   const skillsDir = path.join(repoDir, 'skills');
   if (fs.existsSync(skillsDir)) {
     for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
@@ -92,145 +144,179 @@ function findSkillsInRepo(repoDir) {
     }
   }
 
-  // Mode B: single-skill repo — root SKILL.md
+  // Single-skill repo — root SKILL.md
   const rootMd = path.join(repoDir, 'SKILL.md');
   if (fs.existsSync(rootMd)) {
     const name = readFrontmatterName(rootMd);
-    if (name) {
-      // Don't add if already found via mode A
-      if (!results.some(r => r.name === name)) {
-        results.push({ name, dir: repoDir });
-      }
+    if (name && !results.some(r => r.name === name)) {
+      results.push({ name, dir: repoDir });
     }
   }
 
   return results;
 }
 
-// ---------- installation ----------
+// ── Conflict check ──
 
-function isPersonalSkill(skillName) {
-  const dir = path.join(SKILLS_DIR, skillName);
+function isPersonalSkill(name) {
+  const dir = path.join(SKILLS_DIR, name);
   return fs.existsSync(dir) && !fs.existsSync(path.join(dir, 'GENERATION.md'));
 }
 
-function installSkill(skill, repo, commitHash, dryRun) {
-  const { name, dir: srcDir } = skill;
-  const destDir = path.join(SKILLS_DIR, name);
+// ── Multi-model adapters ──
 
-  // Conflict check: personal skill with same name
-  if (isPersonalSkill(name)) {
-    console.error(`  ✗ Cannot install "${name}": a personal skill with this name already exists.`);
+function generateAdapters(destDir, name, description, body) {
+  const adaptersDir = path.join(destDir, 'adapters');
+  if (!fs.existsSync(adaptersDir)) fs.mkdirSync(adaptersDir, { recursive: true });
+
+  // 1. Cursor .mdc rule format — place in .cursor/rules/<name>.mdc
+  const cursorMdc = `---
+description: ${description}
+globs:
+alwaysApply: false
+---
+
+${body}
+`;
+  fs.writeFileSync(path.join(adaptersDir, 'cursor.mdc'), cursorMdc);
+
+  // 2. Cursor .cursorrules (legacy) — place in project root
+  const cursorRules = `# ${name}
+# Place this file at .cursorrules in your project root.
+# It works with Cursor, Windsurf, and other Cursor-compatible IDEs.
+
+${body}
+`;
+  fs.writeFileSync(path.join(adaptersDir, 'cursor.cursorrules'), cursorRules);
+
+  // 3. GitHub Copilot — place in .github/copilot-instructions.md
+  const copilotContent = `# ${name}
+# Place this file at .github/copilot-instructions.md in your repository.
+# GitHub Copilot will automatically read it for repository-level instructions.
+
+${body}
+`;
+  fs.writeFileSync(path.join(adaptersDir, 'copilot.md'), copilotContent);
+
+  // 4. Claude Code raw format — the original SKILL.md content for reference
+  console.log(`  Generated adapters: cursor (.mdc / .cursorrules), copilot`);
+}
+
+// ── Install from URL ──
+
+function installFromUrl(url, nameOverride, dryRun) {
+  const rawUrl = toRawGithubUrl(url);
+
+  console.log(`Fetching ${rawUrl}...`);
+  const content = execSync(`curl -sL "${rawUrl}"`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+
+  if (!content || content.length < 10) {
+    console.error(`  ✗ Failed to fetch content from ${rawUrl}`);
     return false;
   }
 
-  // Read existing GENERATION.md to check status
+  // Parse frontmatter
+  const { frontmatter, body } = parseFrontmatter(content);
+  const skillName = nameOverride || frontmatter.name;
+  if (!skillName) {
+    console.error(`  ✗ Cannot determine skill name. Provide --name <name> or ensure the source has a "name:" field in frontmatter.`);
+    return false;
+  }
+
+  if (isPersonalSkill(skillName)) {
+    console.error(`  ✗ Cannot install "${skillName}": a personal skill with this name already exists.`);
+    return false;
+  }
+
+  const destDir = path.join(SKILLS_DIR, skillName);
+
+  // Check if already installed
   const genPath = path.join(destDir, 'GENERATION.md');
   if (fs.existsSync(genPath)) {
     const gen = fs.readFileSync(genPath, 'utf-8');
-    const src = gen.match(/source:\s*(.+)/)?.[1];
-    const cmt = gen.match(/commit:\s*(.+)/)?.[1];
-
-    if (src === repo && cmt === commitHash) {
-      console.log(`  ✓ ${name} is already up-to-date`);
-      return true;
-    }
-    if (src && src !== repo) {
-      console.error(`  ✗ "${name}" is already installed from "${src}". Remove it first:`);
-      console.error(`       npm run remove-skill ${name}`);
+    const src = gen.match(/sourceUrl:\s*(.+)/)?.[1];
+    if (src === rawUrl) {
+      // Check if content is the same (compare body length as heuristic)
+      const existingSkillMd = path.join(destDir, 'SKILL.md');
+      if (fs.existsSync(existingSkillMd)) {
+        const existingContent = fs.readFileSync(existingSkillMd, 'utf-8');
+        const { body: existingBody } = parseFrontmatter(existingContent);
+        if (existingBody === body) {
+          console.log(`  ✓ ${skillName} is already up-to-date`);
+          return true;
+        }
+        console.log(`  ~ ${skillName} has changed upstream, updating...`);
+      }
+    } else if (src) {
+      console.error(`  ✗ "${skillName}" is already installed from "${src}". Remove it first:`);
+      console.error(`       npm run remove-skill ${skillName}`);
       return false;
     }
-    // src === repo but commit differs => needs update
   }
 
   if (dryRun) {
-    const action = fs.existsSync(destDir) ? 'would update' : 'would install';
-    console.log(`  ~ ${name} (${action})`);
+    console.log(`  ~ ${skillName} (would install from URL)`);
     return true;
   }
 
-  // Copy files
-  console.log(`  Installing ${name}...`);
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true });
-  }
+  // Clean frontmatter (strip model-specific fields)
+  const cleanedFm = cleanFrontmatter(frontmatter);
 
-  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.name.startsWith('.git')) continue;
-    const srcPath = path.join(srcDir, entry.name);
-    const destPath = path.join(destDir, entry.name);
-    if (entry.isDirectory()) {
-      execSync(`cp -R "${srcPath}" "${destPath}"`, { stdio: 'pipe' });
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
+  // Build SKILL.md — keep only name, description from original
+  const skillFm = {};
+  if (cleanedFm.name) skillFm.name = cleanedFm.name;
+  if (cleanedFm.description) skillFm.description = cleanedFm.description;
+  // Optionally preserve version if present
+  if (cleanedFm.version) skillFm.version = cleanedFm.version;
 
-  // Write GENERATION.md
-  const skillRelPath = path.relative(repoDirForGeneration, srcDir);
+  const skillContent = stringifyFrontmatter(skillFm) + body + '\n';
+
+  console.log(`Installing ${skillName}...`);
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+  fs.writeFileSync(path.join(destDir, 'SKILL.md'), skillContent);
+  fs.writeFileSync(path.join(destDir, 'ORIGINAL.md'), content);
+
+  // GENERATION.md
   const generation = `---
-source: ${repo}
-sourceType: github
-ref: main
-commit: ${commitHash}
-skillPath: ${skillRelPath}/SKILL.md
+source: ${rawUrl}
+sourceType: url
+name: ${skillName}
 syncedAt: ${new Date().toISOString()}
 ---
 `;
   fs.writeFileSync(genPath, generation);
 
-  // Update manifest
+  // Generate multi-model adapters (use body without frontmatter for adapter content)
+  const desc = cleanedFm.description || skillName;
+  generateAdapters(destDir, skillName, desc, body);
+
+  // Update manifest (version 2: url source)
   const manifest = readManifest();
-  if (!manifest.github[repo]) {
-    manifest.github[repo] = { ref: 'main', installedSkills: {} };
-  }
-  manifest.github[repo].installedSkills[name] = {
-    commit: commitHash,
+  if (!manifest.url) manifest.url = {};
+  if (!manifest.url[rawUrl]) manifest.url[rawUrl] = { installedSkills: {} };
+  manifest.url[rawUrl].installedSkills[skillName] = {
+    name: skillName,
     syncedAt: new Date().toISOString(),
   };
   writeManifest(manifest);
 
-  console.log(`  ✓ ${name} installed`);
+  console.log(`  ✓ ${skillName} installed`);
   return true;
 }
 
-let repoDirForGeneration = ''; // hack for relative path calc
+// ── Install from GitHub ──
 
-// ---------- main ----------
-
-function main() {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes('--dry-run');
-  const arg = args.find(a => !a.startsWith('-'));
-
-  if (!arg || arg === '--help' || arg === '-h') {
-    showHelp();
-    process.exit(0);
-  }
-
-  const parsed = parseArg(arg);
-  if (!parsed) {
-    console.error('Invalid argument. Use: npm run add-skill <org/repo>[@<skill>]');
-    process.exit(1);
-  }
-
-  const { repo, skill: targetSkill } = parsed;
-  const repoName = getRepoName(repo);
-  const tempDir = path.join(ROOT, `${TEMP_PREFIX}${repoName}`);
-
+function installFromGithub(repo, targetSkill, dryRun) {
+  const rName = repoName(repo);
+  const tempDir = path.join(ROOT, `${TEMP_PREFIX}${rName}`);
   let exitCode = 0;
 
   try {
-    // Clean up leftover temp
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true });
-    }
+    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
 
     console.log(`Cloning ${repo}...`);
     cloneRepo(repo, tempDir);
-
-    repoDirForGeneration = tempDir;
 
     const commitHash = getCommitHash(tempDir);
     const allSkills = findSkillsInRepo(tempDir);
@@ -252,22 +338,129 @@ function main() {
     }
 
     for (const skill of toInstall) {
-      const ok = installSkill(skill, repo, commitHash, dryRun);
+      const ok = installGithubSkill(skill, repo, commitHash, tempDir, dryRun);
       if (!ok) exitCode = 1;
     }
 
-    // Cleanup
     fs.rmSync(tempDir, { recursive: true });
-
-    console.log(`\nDone! Run 'npm run validate' to verify all skills.`);
-    process.exit(exitCode);
   } catch (err) {
     console.error(`Error: ${err.message}`);
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true });
-    }
+    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
     process.exit(1);
   }
+
+  return exitCode;
+}
+
+function installGithubSkill(skill, repo, commitHash, repoDir, dryRun) {
+  const { name, dir: srcDir } = skill;
+  const destDir = path.join(SKILLS_DIR, name);
+
+  if (isPersonalSkill(name)) {
+    console.error(`  ✗ Cannot install "${name}": a personal skill with this name already exists.`);
+    return false;
+  }
+
+  const genPath = path.join(destDir, 'GENERATION.md');
+  if (fs.existsSync(genPath)) {
+    const gen = fs.readFileSync(genPath, 'utf-8');
+    const src = gen.match(/source:\s*(.+)/)?.[1];
+    const cmt = gen.match(/commit:\s*(.+)/)?.[1];
+
+    if (src === repo && cmt === commitHash) {
+      console.log(`  ✓ ${name} is already up-to-date`);
+      return true;
+    }
+    if (src && src !== repo) {
+      console.error(`  ✗ "${name}" is already installed from "${src}". Remove it first:`);
+      console.error(`       npm run remove-skill ${name}`);
+      return false;
+    }
+  }
+
+  if (dryRun) {
+    console.log(`  ~ ${name} (would ${fs.existsSync(destDir) ? 'update' : 'install'})`);
+    return true;
+  }
+
+  console.log(`Installing ${name}...`);
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+  for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.git')) continue;
+    const s = path.join(srcDir, entry.name);
+    const d = path.join(destDir, entry.name);
+    if (entry.isDirectory()) {
+      execSync(`cp -R "${s}" "${d}"`, { stdio: 'pipe' });
+    } else {
+      fs.copyFileSync(s, d);
+    }
+  }
+
+  const skillRelPath = path.relative(repoDir, srcDir);
+  const generation = `---
+source: ${repo}
+sourceType: github
+ref: main
+commit: ${commitHash}
+skillPath: ${skillRelPath}/SKILL.md
+syncedAt: ${new Date().toISOString()}
+---
+`;
+  fs.writeFileSync(genPath, generation);
+
+  const manifest = readManifest();
+  if (!manifest.github) manifest.github = {};
+  if (!manifest.github[repo]) {
+    manifest.github[repo] = { ref: 'main', installedSkills: {} };
+  }
+  manifest.github[repo].installedSkills[name] = {
+    commit: commitHash,
+    syncedAt: new Date().toISOString(),
+  };
+  writeManifest(manifest);
+
+  console.log(`  ✓ ${name} installed`);
+  return true;
+}
+
+// ── Main ──
+
+function main() {
+  const args = process.argv.slice(2);
+  const dryRun = args.includes('--dry-run');
+  const nameOverrideIdx = args.indexOf('--name');
+  const nameOverride = nameOverrideIdx >= 0 ? args[nameOverrideIdx + 1] : null;
+  const arg = args.find(a => !a.startsWith('-'));
+
+  if (!arg || arg === '--help' || arg === '-h') {
+    showHelp();
+    process.exit(0);
+  }
+
+  const sourceType = detectSource(arg);
+  if (!sourceType) {
+    console.error('Invalid argument. Use: npm run add-skill <org/repo>[@<skill>] | <url> [--name <name>]');
+    process.exit(1);
+  }
+
+  let ok;
+
+  if (sourceType === 'url') {
+    ok = installFromUrl(arg, nameOverride, dryRun);
+  } else if (sourceType === 'github') {
+    const { repo, skill } = parseGithubArg(arg);
+    ok = installFromGithub(repo, skill, dryRun);
+  } else {
+    console.error(`Unsupported source type: ${sourceType}`);
+    process.exit(1);
+  }
+
+  if (ok) {
+    console.log(`\nDone! Run 'npm run validate' to verify all skills.`);
+  }
+
+  process.exit(ok ? 0 : 1);
 }
 
 main();

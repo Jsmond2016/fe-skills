@@ -63,33 +63,56 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 | [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
 | [fe-set-ai-base](./skills/fe-set-ai-base) | AI 工程化配置初始化（CLAUDE.md + AGENTS.md + DESIGN.md + .claude/） |
 | [fe-setup-basic-project-env](./skills/fe-setup-basic-project-env) | 通用项目基础环境配置（pnpm + ESLint + Prettier + AGENTS.md） |
-| [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包） |
+| [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包）|
+
+> 第三方 Skill（通过 `npm run add-skill` 安装）
+>
+> | Skill | Description |
+> |-------|-------------|
+> | [code-simplifier](./skills/code-simplifier) | 代码简化与重构，提升可读性和可维护性（来自 anthropic/claude-plugins-official） |
 
 ## 依赖管理（管理第三方 Skill）
 
-本仓库支持像 npm 一样管理第三方的 Skill，可以方便地从 GitHub 安装和更新社区 Skill。
+本仓库支持像 npm 一样管理第三方的 Skill，支持从 GitHub 仓库或任意 URL 安装。
 
 ```bash
-# 安装一个外部 skill（从多 skill 仓库中选一个）
-npm run add-skill antfu/skills@vue
+# 从 GitHub 多 skill 仓库安装
+npm run add-skill antfu/skills@vue           # 安装单个 skill
+npm run add-skill antfu/skills               # 安装全部 skill
 
-# 安装单 skill 仓库的所有 skill
+# 从单 skill 仓库安装
 npm run add-skill chen8254d/antd-skills
 
-# 安装多 skill 仓库的所有 skill
-npm run add-skill antfu/skills
+# 从任意 URL 安装（自动适配多模型）
+npm run add-skill https://github.com/org/repo/blob/main/path/to/skill.md
 
-# 查看已安装的 vendor skill 状态
-npm run skill-status
+# 指定名称安装（URL 源无法自动识别名称时）
+npm run add-skill <url> --name my-skill
 
-# 更新所有 vendor skill 到最新版本
-npm run update-skills
+# 管理
+npm run skill-status                          # 查看 vendor skill 状态
+npm run update-skills                         # 更新所有 vendor skill
+npm run remove-skill vue                      # 移除 vendor skill
 
-# 移除一个 vendor skill
-npm run remove-skill vue
+# 转换为其他 AI 平台格式
+npm run convert-skill code-simplifier         # 查看 adapter 状态
+npm run convert-skill code-simplifier --platform all   # 生成所有平台适配器
 ```
 
-安装的第三方 skill 存放在 `skills/<name>/` 目录下，附带的 `GENERATION.md` 记录来源和版本信息，方便追溯和更新。
+### 多模型适配
+
+从 URL 安装的 skill 会自动生成**多平台适配器**，存放在 `skills/<name>/adapters/` 下：
+
+| 适配器 | 目标平台 | 使用方式 |
+|--------|---------|---------|
+| `cursor.mdc` | Cursor IDE | 复制到 `.cursor/rules/<name>.mdc` |
+| `cursor.cursorrules` | Cursor (legacy) / Windsurf | 复制到项目根目录 `.cursorrules` |
+| `copilot.md` | GitHub Copilot | 复制到 `.github/copilot-instructions.md` |
+
+同时会保留：
+- `SKILL.md` — 清理后的跨平台格式（已移除 `model:` 等专有字段）
+- `ORIGINAL.md` — 原始内容备份
+- `GENERATION.md` — 来源跟踪
 
 ## 开发
 
@@ -118,15 +141,22 @@ npm run validate
 fe-skills/
 ├── skill-dependencies.json  # Vendor skill 依赖 manifest（自动维护）
 ├── skills/                  # Skill 集合
-│   ├── fe-react-stack/
+│   ├── fe-code-review/      # 个人 skill（fe- / sys- 前缀）
 │   │   └── SKILL.md
-│   ├── fe-tailwindcss/
-│   │   └── SKILL.md
+│   ├── code-simplifier/     # 第三方 skill（通过 URL 导入）
+│   │   ├── SKILL.md         #   清洗后的跨平台格式
+│   │   ├── ORIGINAL.md      #   原始内容备份
+│   │   ├── GENERATION.md    #   来源跟踪
+│   │   └── adapters/        #   多平台适配器
+│   │       ├── cursor.mdc
+│   │       ├── cursor.cursorrules
+│   │       └── copilot.md
 │   └── ...
 ├── templates/               # 脚手架模板
 ├── scripts/                 # 工具脚本
-│   ├── add-skill.js         # 安装外部 skill
+│   ├── add-skill.js         # 安装外部 skill（支持 GitHub / URL）
 │   ├── update-skills.js     # 更新所有 vendor skill
+│   ├── convert-skill.js     # 转换 skill 到其他 AI 平台格式
 │   ├── remove-skill.js      # 移除 vendor skill
 │   ├── skill-status.js      # 查看 vendor skill 状态
 │   ├── create-skill.js
