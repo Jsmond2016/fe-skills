@@ -36,7 +36,7 @@ description: 通用项目基础环境配置 — pnpm、ESLint、Prettier、Git�
 | 环境变量 | 统一环境变量管理规范 | `.env.example` |
 | 发版规范 | SemVer + Git Tag + 发布检查清单 | `scripts/release.cjs` |
 | CHANGELOG | 格式规范与生成指引 | 文档说明（生成交由 `fe-commit`） |
-| CI/CD | GitHub Actions 自动化：lint → test → build | `.github/workflows/ci.yml` |
+| CI/CD | GitHub Actions 自动发版：检测 release commit → 构建 → 打包 → 创建 Release | `.github/workflows/release.yml` |
 | AI 协作规范 | 人机协作的行为准则与边界 | `AGENTS.md` |
 
 ---
@@ -421,21 +421,23 @@ function main() {
     console.warn('CHANGELOG generation skipped or failed');
   }
 
-  // 5. Git commit 和 tag
+  // 5. Git commit（本地 tag 仅用于标记，远端 tag 由 CI 自动创建）
   execSync('git add package.json CHANGELOG.md', { stdio: 'inherit' });
-  execSync(`git commit -m "chore(release): v${version}"`, { stdio: 'inherit' });
+  execSync(`git commit -m "chore(release): ${version}"`, { stdio: 'inherit' });
   execSync(`git tag v${version}`, { stdio: 'inherit' });
 
   console.log(`\n✅ Release v${version} created locally.`);
 
   // 6. 推送（可选）
+  // 注意：建议只推 commit，不推 --tags。
+  // CI 会检测 chore(release): x.x.x 提交后自动创建远端 tag 和 GitHub Release。
   if (shouldPush) {
     execSync('git push', { stdio: 'inherit' });
-    execSync('git push --tags', { stdio: 'inherit' });
-    console.log(`✅ Pushed to remote.`);
+    console.log('✅ Pushed to remote.');
+    console.log('ℹ️  CI 将自动创建 tag 和 Release（检测到 release commit）。');
   } else {
-    console.log(`\nTo push to remote, run:`);
-    console.log(`  git push && git push --tags`);
+    console.log('\nTo push commit (CI will auto-create tag and Release):');
+    console.log('  git push');
   }
 }
 
@@ -498,175 +500,232 @@ npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0
 
 ---
 
-## 10. CI/CD：GitHub Actions
+## 10. CI/CD：GitHub Actions 自动发版
 
 ### 10.1 工作流配置
 
-**文件**：`.github/workflows/build.yml`
+**文件**：`.github/workflows/release.yml`
 
 ```yaml
-name: Build and Release
+name: Auto Release on Commit
 
+# 触发条件：
+# 1. 推送到 main 分支
+# 2. commit 消息格式为 "chore(release): x.x.x"
 on:
   push:
-    branches: [main, master]
+    branches: [ main ]
     paths-ignore:
       - 'README.md'
       - 'docs/**'
       - '*.md'
 
-permissions:
-  contents: write
-
 jobs:
-  build:
+  auto-release:
+    name: Auto Release
+    timeout-minutes: 20
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
     steps:
-      - name: Checkout
+      - name: Check out code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        id: check_commit
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Latest commit message: $COMMIT_MSG"
+
+          if [[ $COMMIT_MSG =~ ^chore\(release\):\ ([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?)$ ]]; then
+            VERSION=${BASH_REMATCH[1]}
+            echo "✅ Valid release commit detected: $VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag_name=v$VERSION" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Commit message does not match release format"
+            echo "Expected format: chore(release): x.x.x"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if tag already exists
+        if: steps.check_commit.outputs.should_release == 'true'
+        id: check_tag
+        run: |
+          TAG_NAME="${{ steps.check_commit.outputs.tag_name }}"
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "❌ Tag $TAG_NAME already exists"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Tag $TAG_NAME does not exist, proceeding with release"
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup pnpm
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - name: Setup Node
+      - name: Setup Node.js environment
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
       - name: Install dependencies
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Test
-        run: pnpm run test
-
-      - name: Build
+      - name: Build project
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
         run: pnpm run build
 
-      - name: Read version
-        id: version
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+      - name: Verify build outputs
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "ERROR: dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build outputs verified"
+
+      - name: Read Changelog from CHANGELOG.md
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
+        id: generate_changelog
+        run: |
+          VERSION="${{ steps.check_commit.outputs.version }}"
+          TAG_NAME="${{ steps.check_commit.outputs.tag_name }}"
+          REPO="${{ github.repository }}"
+          SERVER="${{ github.server_url }}"
+
+          CHANGELOG_CONTENT=$(awk "/^## \[v?${VERSION}/,/^## \[/ {exit}" CHANGELOG.md | head -n -1)
+
+          if [ -z "$(echo "$CHANGELOG_CONTENT" | tr -d '[:space:]')" ]; then
+            CHANGELOG_CONTENT=$'### 📝 Changes\n\n- 常规更新与改进\n- 详见 [CHANGELOG.md]('"$SERVER/$REPO"'/blob/main/CHANGELOG.md)'
+          fi
+
+          {
+            echo "## v$VERSION"
+            echo ""
+            echo "### 📦 Downloads"
+            echo "- **Build artifact**: [${{ github.event.repository.name }}_$VERSION.zip]($SERVER/$REPO/releases/download/$TAG_NAME/${{ github.event.repository.name }}_$VERSION.zip)"
+            echo ""
+            echo "### 📝 What's Changed"
+            echo ""
+            echo "$CHANGELOG_CONTENT"
+            echo ""
+            echo "---"
+            echo ""
+            echo "**🤖 This release was automatically created from commit:** \`${{ github.sha }}\`"
+          } > release-body.md
+
+          echo "✅ Release body generated"
 
       - name: Package artifact
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
         run: |
-          mkdir -p artifacts
-          zip -r artifacts/${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}.zip dist/ --exclude "dist/node_modules/*"
+          cd dist
+          zip -r "../${{ github.event.repository.name }}_${{ steps.check_commit.outputs.version }}.zip" .
+          cd ..
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}
-          path: artifacts/${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}.zip
+          if [ ! -f "${{ github.event.repository.name }}_${{ steps.check_commit.outputs.version }}.zip" ]; then
+            echo "ERROR: ZIP file not created"
+            exit 1
+          fi
+          ls -la *.zip
+
+      - name: Create Git Tag
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          TAG_NAME="${{ steps.check_commit.outputs.tag_name }}"
+          VERSION="${{ steps.check_commit.outputs.version }}"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git tag -a "$TAG_NAME" -m "Release $VERSION"
+          git push origin "$TAG_NAME"
+
+          echo "✅ Git tag $TAG_NAME created and pushed"
 
       - name: Create Release
-        if: startsWith(github.event.head_commit.message, 'chore(release):')
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
-          body: "请查看 CHANGELOG.md 获取详细变更内容。"
-          files: artifacts/${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}.zip
+          tag_name: ${{ steps.check_commit.outputs.tag_name }}
+          name: v${{ steps.check_commit.outputs.version }}
+          body_path: release-body.md
+          files: |
+            ${{ github.event.repository.name }}_${{ steps.check_commit.outputs.version }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip Release (Invalid Commit)
+        if: steps.check_commit.outputs.should_release == 'false'
+        run: |
+          echo "ℹ️ Skipping release - commit message does not match release format"
+          echo "Expected format: chore(release): x.x.x"
+          echo "Current commit: $(git log -1 --pretty=%B)"
+
+      - name: Skip Release (Tag Exists)
+        if: steps.check_commit.outputs.should_release == 'true' && steps.check_tag.outputs.tag_exists == 'true'
+        run: |
+          echo "ℹ️ Skipping release - tag ${{ steps.check_commit.outputs.tag_name }} already exists"
 ```
 
-### 10.2 CI 说明
+### 10.2 工作流说明
 
 | 项 | 说明 |
 |:---|:-----|
-| **触发条件** | push 到 `main` 或 `master` 分支；忽略纯文档变更 |
-| **权限** | `contents: write` 用于创建 Release 和上传产物 |
-| **步骤** | checkout → 安装 pnpm/Node → `pnpm install --frozen-lockfile` → lint → test → build → 打包 zip → 上传 artifact → 自动创建 Release（仅 release commit） |
-| **缓存** | 使用 `setup-node` 的 `cache: 'pnpm'` 缓存 `pnpm-store`，加速安装 |
-| **Release 条件** | commit message 为 `chore(release): vX.Y.Z` 时自动创建同名 GitHub Release 并挂载 zip 包 |
-| **产物命名** | 自动使用仓库名 + 版本号：`{repo-name}_v{version}.zip` |
-| **下载** | 每次 push 的产物在 GitHub Actions Artifacts 中下载；release commit 可在仓库 Releases 页直接下载 |
+| **触发条件** | push 到 `main` 分支，commit message 必须为 `chore(release): x.x.x` 格式；忽略纯文档变更 |
+| **权限** | `contents: write` + `packages: write`，用于创建 tag 和 Release |
+| **commit 格式** | 使用正则 `^chore\(release\):\ (\d+\.\d+\.\d+)` 校验，**不带 `v` 前缀** |
+| **tag 去重** | 检查远端是否已存在 tag，防止重复发布 |
+| **CHANGELOG** | 从 `CHANGELOG.md` 中提取当前版本的变更内容，自动生成 Release body |
+| **产物** | 构建产出 `dist/` 目录，打包为 `{仓库名}_{版本号}.zip` |
+| **Release** | 自动创建 Git tag 并推送到远端，使用 `softprops/action-gh-release` 创建 Release 并挂载 zip |
 
 ### 10.3 发布流程
 
-配合本地 `scripts/release.cjs` 发版脚本，完整的发布流程为：
+配合本地 `scripts/release.cjs` 发版脚本，完整流程为：
 
 ```bash
-# 1. 本地执行发版（bump 版本 → 更新 CHANGELOG → git commit + tag）
+# 1. 本地执行发版（bump 版本 → 更新 CHANGELOG → git commit + 本地 tag）
 pnpm run release:patch
 
-# 2. 推送到远端
-git push && git push --tags
+# 2. 只推送 commit（不推 tags），tags 由 CI 自动创建
+git push
 ```
 
-推送后 CI 自动触发：
-- 所有 push 执行 lint → test → build → 上传 artifact
-- commit 为 `chore(release): vX.Y.Z` 时额外创建 GitHub Release 并挂载 zip 包
+CI 自动完成：
+1. 检测到 commit 为 `chore(release): x.x.x`
+2. 安装依赖 → 构建 → 打包 zip
+3. 从 `CHANGELOG.md` 提取当前版本变更内容
+4. 自动创建远端 Git tag `vx.x.x`
+5. 创建 GitHub Release 并挂载 zip 包
 
-### 10.4 多 Job 拆分（适用于大型项目）
-
-当 lint / test / build 耗时较长时，拆分为并行 Job：
-
-```yaml
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run test
-
-  build:
-    needs: [lint, test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-      - run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
-      - run: zip -r artifact.zip dist/ --exclude "dist/node_modules/*"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}
-          path: artifact.zip
-      - name: Create Release
-        if: startsWith(github.event.head_commit.message, 'chore(release):')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
-          files: artifact.zip
-```
-
-### 10.5 技术栈扩展
+### 10.4 技术栈扩展
 
 不同技术栈在基础 CI 上扩展专属步骤：
 
 | 技术栈 | 额外步骤 |
 |:-------|:---------|
-| React / Vue | 无额外步骤，`build` 即产出 `dist/`，直接打包即可 |
-| Node API | build 后替换为 Docker 构建和推送 |
-| VS Code 扩展 | 见 `fe-setup-vsc-config-plugin` skill 的 CI 打包部分（vsce package → .vsix） |
-| npm 包发布 | 在 test + build 通过后追加 `npm publish` 步骤（需配置 `NPM_TOKEN`） |
+| React / Vue | 无需额外步骤，`build` 产出 `dist/` 直接打包 |
+| Node API | 替换构建步骤为 Docker 构建和推送 |
+| Chrome 扩展 | 打包后验证 `manifest.json` 是否存在 |
+| VS Code 扩展 | 见 `fe-setup-vsc-config-plugin` skill（vsce package → .vsix） |
+| npm 包发布 | 在 Release 步骤前追加 `npm publish`（需配置 `NPM_TOKEN`） |
 
-> 本 skill 提供 **通用 CI 骨架**，各技术栈 skill 在此基础上追加专属 CI 步骤。
+> 本 skill 提供 **通用发版 CI 骨架**，各技术栈 skill 在此基础上追加专属步骤。
 
 ---
 
@@ -778,7 +837,7 @@ AGENTS.md 是项目级 AI 协作规范文档，指导 AI Agent（Claude Code、C
 │   └── release.cjs       # 发版脚本
 ├── .github/
 │   └── workflows/
-│       └── build.yml        # GitHub Actions CI + Release
+│       └── release.yml      # GitHub Actions 自动发版
 ├── docs/
 │   └── cr/               # CR 报告目录
 ├── CHANGELOG.md
@@ -880,12 +939,12 @@ node scripts/init-agents-md.cjs
 - [ ] `.editorconfig` 是否统一了编辑器基础行为
 - [ ] ESLint + Prettier 配置是否为通用基础版（无框架绑定）
 - [ ] `.env.example` 是否完整记录了所需环境变量
-- [ ] `scripts/release.cjs` 是否包含工作区检查、CHANGELOG 生成、Git tag
+- [ ] `scripts/release.cjs` 是否使用 `chore(release): x.x.x` 格式（不带 `v` 前缀）
 - [ ] `AGENTS.md` 是否已放置在项目根目录
 - [ ] AGENTS.md 是否覆盖了：需求管理、CR 规范、提交规范、安全边界、编码规范、文档协作、Memory 管理、测试协作、工具限制
 - [ ] 安全漏洞发现时是否要求主动生成 issue
 - [ ] 编码规范是否强制要求圈复杂度不超过 10
-- [ ] `.github/workflows/build.yml` 是否包含 lint → test → build → 打包 → artifact 全流程
-- [ ] CI 是否配置了 pnpm 缓存加速依赖安装
-- [ ] CI 触发规则是否排除了纯文档变更，避免不必要运行
-- [ ] Release 是否仅由 `chore(release):` commit 触发（通过 `startsWith` 条件控制）
+- [ ] `.github/workflows/release.yml` 是否包含 commit 格式校验 + tag 去重 + 构建 + 打包 + Release 全流程
+- [ ] CI 是否使用了正则 `^chore\(release\):\ (\d+\.\d+\.\d+)` 校验 commit 格式
+- [ ] CI 是否有 tag 已存在的检查，防止重复发布
+- [ ] 发版流程是否先本地 `release.cjs` → `git push`（不推 tags），由 CI 自动创建 tag 和 Release
