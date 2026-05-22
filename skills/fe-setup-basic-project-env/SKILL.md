@@ -36,6 +36,7 @@ description: 通用项目基础环境配置 — pnpm、ESLint、Prettier、Git�
 | 环境变量 | 统一环境变量管理规范 | `.env.example` |
 | 发版规范 | SemVer + Git Tag + 发布检查清单 | `scripts/release.cjs` |
 | CHANGELOG | 格式规范与生成指引 | 文档说明（生成交由 `fe-commit`） |
+| CI/CD | GitHub Actions 自动化：lint → test → build | `.github/workflows/ci.yml` |
 | AI 协作规范 | 人机协作的行为准则与边界 | `AGENTS.md` |
 
 ---
@@ -497,11 +498,183 @@ npx conventional-changelog -p angular -i CHANGELOG.md -s -r 0
 
 ---
 
-## 10. AI 协作规范（AGENTS.md）
+## 10. CI/CD：GitHub Actions
+
+### 10.1 工作流配置
+
+**文件**：`.github/workflows/build.yml`
+
+```yaml
+name: Build and Release
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '*.md'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Package artifact
+        run: |
+          mkdir -p artifacts
+          zip -r artifacts/${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}.zip dist/ --exclude "dist/node_modules/*"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}
+          path: artifacts/${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}.zip
+
+      - name: Create Release
+        if: startsWith(github.event.head_commit.message, 'chore(release):')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body: "请查看 CHANGELOG.md 获取详细变更内容。"
+          files: artifacts/${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}.zip
+```
+
+### 10.2 CI 说明
+
+| 项 | 说明 |
+|:---|:-----|
+| **触发条件** | push 到 `main` 或 `master` 分支；忽略纯文档变更 |
+| **权限** | `contents: write` 用于创建 Release 和上传产物 |
+| **步骤** | checkout → 安装 pnpm/Node → `pnpm install --frozen-lockfile` → lint → test → build → 打包 zip → 上传 artifact → 自动创建 Release（仅 release commit） |
+| **缓存** | 使用 `setup-node` 的 `cache: 'pnpm'` 缓存 `pnpm-store`，加速安装 |
+| **Release 条件** | commit message 为 `chore(release): vX.Y.Z` 时自动创建同名 GitHub Release 并挂载 zip 包 |
+| **产物命名** | 自动使用仓库名 + 版本号：`{repo-name}_v{version}.zip` |
+| **下载** | 每次 push 的产物在 GitHub Actions Artifacts 中下载；release commit 可在仓库 Releases 页直接下载 |
+
+### 10.3 发布流程
+
+配合本地 `scripts/release.cjs` 发版脚本，完整的发布流程为：
+
+```bash
+# 1. 本地执行发版（bump 版本 → 更新 CHANGELOG → git commit + tag）
+pnpm run release:patch
+
+# 2. 推送到远端
+git push && git push --tags
+```
+
+推送后 CI 自动触发：
+- 所有 push 执行 lint → test → build → 上传 artifact
+- commit 为 `chore(release): vX.Y.Z` 时额外创建 GitHub Release 并挂载 zip 包
+
+### 10.4 多 Job 拆分（适用于大型项目）
+
+当 lint / test / build 耗时较长时，拆分为并行 Job：
+
+```yaml
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test
+
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+      - run: zip -r artifact.zip dist/ --exclude "dist/node_modules/*"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_v${{ steps.version.outputs.version }}
+          path: artifact.zip
+      - name: Create Release
+        if: startsWith(github.event.head_commit.message, 'chore(release):')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          files: artifact.zip
+```
+
+### 10.5 技术栈扩展
+
+不同技术栈在基础 CI 上扩展专属步骤：
+
+| 技术栈 | 额外步骤 |
+|:-------|:---------|
+| React / Vue | 无额外步骤，`build` 即产出 `dist/`，直接打包即可 |
+| Node API | build 后替换为 Docker 构建和推送 |
+| VS Code 扩展 | 见 `fe-setup-vsc-config-plugin` skill 的 CI 打包部分（vsce package → .vsix） |
+| npm 包发布 | 在 test + build 通过后追加 `npm publish` 步骤（需配置 `NPM_TOKEN`） |
+
+> 本 skill 提供 **通用 CI 骨架**，各技术栈 skill 在此基础上追加专属 CI 步骤。
+
+---
+
+## 11. AI 协作规范（AGENTS.md）
 
 AGENTS.md 是项目级 AI 协作规范文档，指导 AI Agent（Claude Code、Cursor 等）如何与项目协作。该文件必须存放在**项目根目录**。
 
-### 10.1 初始化与冲突处理
+### 11.1 初始化与冲突处理
 
 当为项目配置 AGENTS.md 时，按以下逻辑处理：
 
@@ -514,7 +687,7 @@ AGENTS.md 是项目级 AI 协作规范文档，指导 AI Agent（Claude Code、C
     └── [替换] 备份原文件为 AGENTS.md.backup.<timestamp>，写入新内容
 ```
 
-### 10.2 AGENTS.md 模板
+### 11.2 AGENTS.md 模板
 
 **文件**：`AGENTS.md`
 
@@ -584,7 +757,7 @@ AGENTS.md 是项目级 AI 协作规范文档，指导 AI Agent（Claude Code、C
 
 ---
 
-## 11. 完整文件清单
+## 12. 完整文件清单
 
 落地完成后，项目根目录应包含以下基础配置：
 
@@ -603,6 +776,9 @@ AGENTS.md 是项目级 AI 协作规范文档，指导 AI Agent（Claude Code、C
 ├── pnpm-workspace.yaml   # Monorepo 场景
 ├── scripts/
 │   └── release.cjs       # 发版脚本
+├── .github/
+│   └── workflows/
+│       └── build.yml        # GitHub Actions CI + Release
 ├── docs/
 │   └── cr/               # CR 报告目录
 ├── CHANGELOG.md
@@ -611,7 +787,7 @@ AGENTS.md 是项目级 AI 协作规范文档，指导 AI Agent（Claude Code、C
 
 ---
 
-## 12. 配置检查脚本
+## 13. 配置检查脚本
 
 用于初始化时校验项目是否已配置 AGENTS.md，并提供合并/舍弃/替换选项。
 
@@ -685,17 +861,17 @@ node scripts/init-agents-md.cjs
 
 ---
 
-## 13. 与其他 Skill 的关系
+## 14. 与其他 Skill 的关系
 
 | Skill | 职责 | 与本 Skill 的关系 |
 |:------|:-----|:----------------|
 | `fe-commit` | Commit 规范 + CHANGELOG 生成 | 本 skill 引用其规范，不重复实现 |
-| `fe-setup-vsc-config-plugin` | VS Code 扩展专属工程化配置 | 本 skill 提供通用基础，其提供扩展专属流程 |
+| `fe-setup-vsc-config-plugin` | VS Code 扩展专属工程化配置 | 本 skill 提供通用基础，其提供扩展专属流程及 CI 打包 |
 | `fe-react-stack` / `fe-node-dev-stack` | 具体技术栈开发规范 | 在本 skill 基础配置上叠加技术栈专属规则 |
 
 ---
 
-## 14. 代码审查检查项
+## 15. 代码审查检查项
 
 - [ ] 是否使用 pnpm 作为包管理器
 - [ ] `.npmrc` 是否配置了统一镜像源
@@ -709,3 +885,7 @@ node scripts/init-agents-md.cjs
 - [ ] AGENTS.md 是否覆盖了：需求管理、CR 规范、提交规范、安全边界、编码规范、文档协作、Memory 管理、测试协作、工具限制
 - [ ] 安全漏洞发现时是否要求主动生成 issue
 - [ ] 编码规范是否强制要求圈复杂度不超过 10
+- [ ] `.github/workflows/build.yml` 是否包含 lint → test → build → 打包 → artifact 全流程
+- [ ] CI 是否配置了 pnpm 缓存加速依赖安装
+- [ ] CI 触发规则是否排除了纯文档变更，避免不必要运行
+- [ ] Release 是否仅由 `chore(release):` commit 触发（通过 `startsWith` 条件控制）
