@@ -43,26 +43,26 @@ npm run validate       # / npm test — 校验所有 skill
 - `npm run create-skill` / `add-skill` / `remove-skill` 执行后
 - `npm install` 或 `npm prepare` 执行时（含 `git clone` 后自动执行）
 
-## 消费端：从 .agent/ 同步到平台目录
+## 消费端：从 .agents/skills/ 同步到平台目录
 
-`skills/sync-agent-skills/` 是一个工具 skill，内置了同步脚本，解决消费者项目执行 `npx skills add fe-skills` 后 `.agent/` → `.claude/skills/`、`.codex/skills/` 的同步问题。
+`skills/sync-agent-skills/` 是一个工具 skill，内置了同步脚本，解决消费者项目执行 `npx skills add fe-skills` 后 `.agents/skills/` → `.claude/skills/`、`.codex/skills/` 的同步问题。
 
 消费者工作流：
 
 ```bash
-# 1. 安装 skills（生成 .agent/）
+# 1. 安装 skills（生成 .agents/skills/）
 npx skills add fe-skills
 
 # 2. 一键同步到所有 AI 平台目录
-node .agent/sync-agent-skills/scripts/sync.cjs
+node .agents/skills/sync-agent-skills/scripts/sync.cjs
 
 # 可选参数
-node .agent/sync-agent-skills/scripts/sync.cjs --dry-run      # 预览
-node .agent/sync-agent-skills/scripts/sync.cjs --platform claude  # 仅 Claude Code
-node .agent/sync-agent-skills/scripts/sync.cjs --copy          # 复制而非链接
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --dry-run      # 预览
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform claude  # 仅 Claude Code
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --copy          # 复制而非链接
 ```
 
-原理：`npx skills add` 将 `skills/sync-agent-skills/` 安装到 `.agent/sync-agent-skills/`，其 `scripts/sync.js` 可自动检测 `.agent/` 位置并扫描所有 skill，为每个已发现的 AI 平台目录创建 symlink。
+原理：`npx skills add` 将 `skills/sync-agent-skills/` 安装到 `.agents/skills/sync-agent-skills/`，其 `scripts/sync.cjs` 可自动检测 `.agents/skills/` 位置并扫描所有 skill，为每个已发现的 AI 平台目录创建 symlink。
 
 ## Skill 规范
 

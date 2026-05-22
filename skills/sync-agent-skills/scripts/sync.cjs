@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * sync.js — sync-agent-skills
+ * sync.cjs — sync-agent-skills
  *
- * 将 .agent/ 目录下的 skills 同步到 AI 平台目录（.claude/skills/、.codex/skills/）。
+ * 将 .agents/skills/ 下的 skills 同步到 AI 平台目录（.claude/skills/、.codex/skills/）。
  *
  * 使用方式（在项目根目录执行）：
- *   node .agent/sync-agent-skills/scripts/sync.js
+ *   node .agents/skills/sync-agent-skills/scripts/sync.cjs
  *
  * 选项：
  *   --dry-run            预览变更
@@ -31,25 +31,32 @@ function resolvePlatformDir(platform, root) {
 
 // ── 检测 ──
 
-function findAgentDir(fromDir) {
+function resolveAgentSource(fromDir) {
+  // 从 fromDir 向上查找 .agents/skills/
   let current = path.resolve(fromDir);
   while (true) {
-    const candidate = path.join(current, '.agent');
+    const candidate = path.join(current, '.agents', 'skills');
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
-      return candidate;
+      return { sourceDir: candidate, projectRoot: current };
+    }
+    // 也兼容一下原始 .agent/<skill> 扁平布局
+    const flat = path.join(current, '.agent');
+    if (fs.existsSync(flat) && fs.statSync(flat).isDirectory()) {
+      return { sourceDir: flat, projectRoot: current };
     }
     const parent = path.dirname(current);
-    if (parent === current) return null;
+    if (parent === current) break;
     current = parent;
   }
+  return null;
 }
 
-function getSkillNames(agentDir) {
+function getSkillNames(sourceDir) {
   const names = [];
-  if (!fs.existsSync(agentDir)) return names;
-  for (const entry of fs.readdirSync(agentDir, { withFileTypes: true })) {
+  if (!fs.existsSync(sourceDir)) return names;
+  for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    if (entry.name.startsWith('.') || !fs.existsSync(path.join(agentDir, entry.name, 'SKILL.md'))) continue;
+    if (entry.name.startsWith('.') || !fs.existsSync(path.join(sourceDir, entry.name, 'SKILL.md'))) continue;
     names.push(entry.name);
   }
   return names.sort();
@@ -125,23 +132,24 @@ function syncTarget(targetDir, skillNames, sourceDir, dryRun, useCopy) {
 
 function showHelp() {
   console.log(`
-用法: node .agent/sync-agent-skills/scripts/sync.js [选项]
+  用法: node .agents/skills/sync-agent-skills/scripts/sync.cjs [选项]
 
-将 .agent/ 中的 skills 同步到 AI 平台目录（.claude/skills/、.codex/skills/）。
+  将 .agents/skills/ 中的 skills 同步到 AI 平台目录
+  （.claude/skills/、.codex/skills/）。
 
-选项:
-  --dry-run            预览变更，不实际执行
-  --platform <names>   仅同步指定平台，如 claude,codex（默认：自动检测）
-  --copy               复制而非符号链接
-  --source <dir>       自定义源目录（默认：从脚本位置自动向上查找 .agent/）
-  --help, -h           显示此帮助
+  选项:
+    --dry-run            预览变更，不实际执行
+    --platform <names>   仅同步指定平台，如 claude,codex（默认：自动检测）
+    --copy               复制而非符号链接
+    --source <dir>       自定义源目录（默认：从脚本位置自动向上查找）
+    --help, -h           显示此帮助
 
-示例:
-  node .agent/sync-agent-skills/scripts/sync.js
-  node .agent/sync-agent-skills/scripts/sync.js --dry-run
-  node .agent/sync-agent-skills/scripts/sync.js --platform claude
-  node .agent/sync-agent-skills/scripts/sync.js --copy
-`);
+  示例:
+    node .agents/skills/sync-agent-skills/scripts/sync.cjs
+    node .agents/skills/sync-agent-skills/scripts/sync.cjs --dry-run
+    node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform claude
+    node .agents/skills/sync-agent-skills/scripts/sync.cjs --copy
+  `);
 }
 
 // ── 主流程 ──
@@ -166,36 +174,40 @@ function main() {
 
   // 解析 --source
   const sourceIdx = args.indexOf('--source');
-  let agentDir = null;
-  if (sourceIdx !== -1 && sourceIdx + 1 < args.length) {
-    agentDir = path.resolve(args[sourceIdx + 1]);
+  const customSource = sourceIdx !== -1 && sourceIdx + 1 < args.length
+    ? path.resolve(args[sourceIdx + 1]) : null;
+
+  // ── 确定项目根目录和源目录 ──
+  let sourceDir;
+  let projectRoot;
+
+  if (customSource) {
+    sourceDir = customSource;
+    projectRoot = path.dirname(sourceDir);
+  } else {
+    const resolved = resolveAgentSource(__dirname);
+    if (!resolved) {
+      console.error('✖ 未找到 .agents/skills/ 目录。请确认已在项目根目录执行 npx skills add。');
+      console.error('  或者使用 --source <path> 指定源目录。');
+      process.exit(1);
+    }
+    sourceDir = resolved.sourceDir;
+    projectRoot = resolved.projectRoot;
   }
 
-  // ── 确定项目根目录和 .agent/ 路径 ──
-  const projectRoot = agentDir ? path.dirname(agentDir) : findProjectRoot();
-  if (!agentDir) {
-    agentDir = findAgentDir(__dirname);
-  }
-
-  if (!agentDir || !fs.existsSync(agentDir)) {
-    console.error('✖ 未找到 .agent/ 目录。请确认已在项目根目录执行 npx skills add。');
-    console.error('  或者使用 --source <path> 指定源目录。');
-    process.exit(1);
-  }
-
-  console.log(`源目录: ${agentDir}`);
+  console.log(`源目录: ${sourceDir}`);
   console.log(`项目根目录: ${projectRoot}`);
 
   // ── 扫描 skills ──
-  const skillNames = getSkillNames(agentDir);
+  const skillNames = getSkillNames(sourceDir);
   if (skillNames.length === 0) {
-    console.warn('⚠ 在 .agent/ 中未找到包含 SKILL.md 的 skill 目录。');
+    console.warn(`⚠ 在 ${path.relative(projectRoot, sourceDir)} 中未找到包含 SKILL.md 的 skill 目录。`);
     process.exit(0);
   }
   console.log(`发现 ${skillNames.length} 个 skills`);
 
   // ── 检测目标平台 ──
-  let platforms = platformFilter || detectPlatforms(projectRoot);
+  const platforms = platformFilter || detectPlatforms(projectRoot);
   if (platforms.length === 0) {
     console.warn('⚠ 未检测到 AI 平台目录（.claude/、.codex/），也没有通过 --platform 指定。');
     console.warn('  请先在项目中初始化 AI 工具配置，或使用 --platform 参数。');
@@ -210,7 +222,7 @@ function main() {
     if (!fs.existsSync(targetDir) && !dryRun) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
-    const result = syncTarget(targetDir, skillNames, agentDir, dryRun, useCopy);
+    const result = syncTarget(targetDir, skillNames, sourceDir, dryRun, useCopy);
     totalCreated += result.created;
     totalRemoved += result.removed;
     const mode = useCopy ? 'copied' : 'linked';
@@ -223,12 +235,6 @@ function main() {
   } else if (totalCreated === 0 && totalRemoved === 0) {
     console.log('所有链接已是最新。');
   }
-}
-
-function findProjectRoot() {
-  // 从脚本位置向上查找，找到包含 .agent/ 的目录
-  const agentDir = findAgentDir(__dirname);
-  return agentDir ? path.dirname(agentDir) : process.cwd();
 }
 
 main();
