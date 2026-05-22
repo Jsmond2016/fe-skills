@@ -23,7 +23,11 @@
   "scripts": {
     "create-skill": "node scripts/create-skill.js",
     "validate": "node scripts/validate-skills.js",
-    "test": "npm run validate"
+    "test": "npm run validate",
+    "add-skill": "node scripts/add-skill.js",
+    "update-skills": "node scripts/update-skills.js",
+    "remove-skill": "node scripts/remove-skill.js",
+    "skill-status": "node scripts/skill-status.js"
   },
   "devDependencies": {
     "yaml": "^2.4.0"

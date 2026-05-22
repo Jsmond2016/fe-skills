@@ -32,5 +32,8 @@ pnpm-lock.yaml
 # 测试生成的临时 skill（开发时使用）
 skills/.test-*/
 
+# Skill sync 临时克隆目录
+.sync-tmp-*/
+
 # Claude Code 本地配置
 .claude/

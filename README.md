@@ -65,6 +65,32 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 | [fe-setup-basic-project-env](./skills/fe-setup-basic-project-env) | 通用项目基础环境配置（pnpm + ESLint + Prettier + AGENTS.md） |
 | [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包） |
 
+## 依赖管理（管理第三方 Skill）
+
+本仓库支持像 npm 一样管理第三方的 Skill，可以方便地从 GitHub 安装和更新社区 Skill。
+
+```bash
+# 安装一个外部 skill（从多 skill 仓库中选一个）
+npm run add-skill antfu/skills@vue
+
+# 安装单 skill 仓库的所有 skill
+npm run add-skill chen8254d/antd-skills
+
+# 安装多 skill 仓库的所有 skill
+npm run add-skill antfu/skills
+
+# 查看已安装的 vendor skill 状态
+npm run skill-status
+
+# 更新所有 vendor skill 到最新版本
+npm run update-skills
+
+# 移除一个 vendor skill
+npm run remove-skill vue
+```
+
+安装的第三方 skill 存放在 `skills/<name>/` 目录下，附带的 `GENERATION.md` 记录来源和版本信息，方便追溯和更新。
+
 ## 开发
 
 ### 创建新 Skill
@@ -90,18 +116,23 @@ npm run validate
 
 ```
 fe-skills/
-├── skills/              # Skill 集合
+├── skill-dependencies.json  # Vendor skill 依赖 manifest（自动维护）
+├── skills/                  # Skill 集合
 │   ├── fe-react-stack/
 │   │   └── SKILL.md
 │   ├── fe-tailwindcss/
 │   │   └── SKILL.md
 │   └── ...
-├── templates/           # 脚手架模板
-├── scripts/             # 工具脚本
+├── templates/               # 脚手架模板
+├── scripts/                 # 工具脚本
+│   ├── add-skill.js         # 安装外部 skill
+│   ├── update-skills.js     # 更新所有 vendor skill
+│   ├── remove-skill.js      # 移除 vendor skill
+│   ├── skill-status.js      # 查看 vendor skill 状态
 │   ├── create-skill.js
 │   └── validate-skills.js
-├── .claude/             # Claude Code 配置
-├── .github/             # GitHub 配置
+├── .claude/                 # Claude Code 配置
+├── .github/                 # GitHub 配置
 └── package.json
 ```
 
