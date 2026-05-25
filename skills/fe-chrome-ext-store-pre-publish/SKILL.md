@@ -15,13 +15,18 @@ description: 发布 Chrome 扩展到 Chrome Web Store 和 Edge Add-ons 的完整
 
 ### 0.1 检测已有文档
 
-在 `docs/publish/` 目录下扫描以下文件：
-- `STORE_SUBMISSION.md` — 商店提交流程与清单
-- `PRIVACY.md` — 数据隐私声明
+在 `docs/publish/` 目录下扫描中英文两份文档：
+
+| 文件 | 语言 | 说明 |
+|------|------|------|
+| `STORE_SUBMISSION.md` | 简体中文 | 商店提交流程与清单 |
+| `STORE_SUBMISSION.en.md` | English | Store submission checklist |
+| `PRIVACY.md` | 简体中文 | 数据隐私声明 |
+| `PRIVACY.en.md` | English | Privacy policy |
 
 ### 0.2 判断是否需要创建或更新
 
-**缺失则创建：** 若 `STORE_SUBMISSION.md` 或 `PRIVACY.md` 不存在，则根据 `manifest.json` 和 `package.json` 中的实际信息生成对应文档。
+**缺失则创建：** 若任一文件不存在，则根据 `manifest.json` 和 `package.json` 中的实际信息生成对应文档（中英文各一份）。
 
 **存在则检查更新：** 若文档已存在，对比以下项目实际内容与文档中记录的信息是否一致：
 - `package.json` 中的 `name`、`version`、`description`
@@ -29,7 +34,7 @@ description: 发布 Chrome 扩展到 Chrome Web Store 和 Edge Add-ons 的完整
 - 项目当前的构建命令（`package.json` scripts 中与 chrome/extension 相关的命令）
 - 项目当前的截图文件是否存在（检查 `assets/`、`images/`、`screenshots/` 等常见目录下的 PNG 文件）
 
-若上述信息有变更则更新对应文档，若无变更则保持不变。
+若上述信息有变更则同时更新中英文文档，若无变更则保持不变。
 
 ### 0.3 文档模板
 
@@ -135,14 +140,118 @@ cd {{构建输出目录}} && zip -r ../extension-v{{版本号}}.zip . && cd ..
 本隐私声明随扩展版本更新。如有重大变更，将在扩展更新说明中告知。
 ````
 
+#### STORE_SUBMISSION.en.md 模板（English）
+
+在 `docs/publish/` 目录下创建 `STORE_SUBMISSION.en.md`：
+
+````markdown
+# Chrome Extension Store Submission Guide
+
+## Extension Info
+
+| Field | Value |
+|-------|-------|
+| **Name** | {{name from manifest.json}} |
+| **Version** | {{version from package.json}} |
+| **Description** | {{description from manifest.json}} |
+| **Category** | Developer Tools |
+| **Language** | English (en) |
+
+## Pre-publish Checklist
+
+- [ ] Extension icon 128x128 ready (check the `icons` field in `manifest.json`)
+- [ ] At least 1 feature screenshot prepared (3-5 screenshots at 1280x800 recommended)
+- [ ] Screenshot files exist in the project directory
+- [ ] Detailed description completed
+- [ ] Category set to "Developer Tools"
+- [ ] Permission justification provided for each permission
+- [ ] Data privacy declaration states "no user data collected"
+- [ ] ZIP package ready
+- [ ] Version number confirmed
+- [ ] Functionality tested locally
+- [ ] Edge add-ons extras: search terms, age rating, publisher info
+
+## Permissions Justification
+
+{{Iterate manifest.json permissions and host_permissions, generate justification for each}}
+
+## Build & Package
+
+```bash
+# Build
+{{build command from package.json}}
+
+# Package
+cd {{build output dir}} && zip -r ../extension-v{{version}}.zip . && cd ..
+```
+
+## Submission Process
+
+### Chrome Web Store
+1. Visit https://chrome.google.com/webstore/devconsole
+2. Sign in with your Google account
+3. Upload the ZIP package and fill in the form
+
+### Edge Add-ons
+1. Visit https://partner.microsoft.com/ → "Edge Add-ons"
+2. Sign in with your Microsoft account
+3. Upload the ZIP package, fill in the form (align with Chrome):
+   - Search terms: extension feature keywords, comma-separated
+   - Pricing: Free
+   - Visibility: Public
+   - Age rating: 3+
+````
+
+#### PRIVACY.en.md 模板（English）
+
+在 `docs/publish/` 目录下创建 `PRIVACY.en.md`：
+
+````markdown
+# Privacy Policy
+
+**{{name from manifest.json}}** (v{{version from package.json}})
+
+## Data Collection and Use
+
+{{Generate based on manifest.json permissions:
+   - If webRequest / host_permissions: only reads request headers for debugging, does not collect request bodies
+   - If storage: used solely for local configuration persistence and caching
+   - If tabs / activeTab: only reads tab info when user actively triggers the extension
+   - If identity / login permissions: describes OAuth data usage
+   - Default fallback:
+}}
+1. This extension does not collect, upload, or share any user data to remote servers.
+2. All data is processed locally in the browser and never leaves the user's device.
+3. User preferences are saved via chrome.storage, used only for syncing settings across devices signed into the same account.
+4. This extension does not read or store browsing history, bookmarks, passwords, or other personal information.
+5. This extension does not send data to any third-party services.
+6. This extension does not execute any remote code — all code is bundled within the extension package.
+
+## Permission Usage
+
+| Permission | Purpose |
+|------------|---------|
+| {{permission name}} | {{usage description generated from actual permissions}} |
+
+## Data Retention
+
+Users can revoke all data access by uninstalling the extension. Saved configuration data can be cleared via the extension options page at chrome://extensions.
+
+## Updates
+
+This privacy policy is updated as the extension version changes. Material changes will be communicated in the extension update notes.
+````
+
 ### 0.4 报告
 
 完成文档管理后，输出摘要：
 
 ```
 📋 商店上架文档状态：
-  - docs/publish/STORE_SUBMISSION.md → {{已创建 / 已更新 / 无需变更}}
-  - docs/publish/PRIVACY.md → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/STORE_SUBMISSION.md      → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/STORE_SUBMISSION.en.md   → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/PRIVACY.md               → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/PRIVACY.en.md            → {{已创建 / 已更新 / 无需变更}}
 ```
 
 ---
@@ -236,7 +345,7 @@ cd {{构建输出目录}} && zip -r ../extension-v{{版本号}}.zip . && cd ..
 
 ## 发布前检查清单
 
-- [ ] **Step 0** — 商店上架文档（STORE_SUBMISSION.md + PRIVACY.md）已就绪
+- [ ] **Step 0** — 商店上架文档（中英文各一份，共 4 文件）已就绪
 - [ ] 扩展图标 128x128 已就绪
 - [ ] 至少 1 张功能截图已准备（建议 3-5 张 1280x800）
 - [ ] 详细描述已填写完整
