@@ -15,12 +15,16 @@ description: 发布 Chrome 扩展到 Chrome Web Store 和 Edge Add-ons 的完整
 
 ### 0.1 检测已有文档
 
-在 `docs/publish/` 目录下扫描中英文两份文档：
+在 `docs/publish/` 目录下扫描以下文件：
 
 | 文件 | 语言 | 说明 |
 |------|------|------|
 | `STORE_SUBMISSION.md` | 简体中文 | 商店提交流程与清单 |
 | `STORE_SUBMISSION.en.md` | English | Store submission checklist |
+| `chrome-web-store-listing.md` | 简体中文 | Chrome Web Store 上架信息表 |
+| `chrome-web-store-listing.en.md` | English | Chrome Web Store listing details |
+| `edge-addons-listing.md` | 简体中文 | Edge Add-ons 上架信息表 |
+| `edge-addons-listing.en.md` | English | Edge Add-ons listing details |
 | `PRIVACY.md` | 简体中文 | 数据隐私声明 |
 | `PRIVACY.en.md` | English | Privacy policy |
 
@@ -242,16 +246,216 @@ Users can revoke all data access by uninstalling the extension. Saved configurat
 This privacy policy is updated as the extension version changes. Material changes will be communicated in the extension update notes.
 ````
 
+#### chrome-web-store-listing.md 模板
+
+在 `docs/publish/` 目录下创建 `chrome-web-store-listing.md`，填写 Chrome Web Store 上架表单的实际内容（可直接复制粘贴到开发者控制台）：
+
+````markdown
+# Chrome Web Store 上架信息
+
+> 以下内容用于 Chrome Web Store 开发者控制台表单填写。
+
+## 摘要（Short Description）
+
+{{一句话描述扩展核心功能，不超过 132 个字符}}
+
+## 详细描述（Detailed Description）
+
+{{功能列表 + 适用场景，每项一行，建议包含 3-5 个要点}}
+
+**功能特性：**
+
+- {{功能 1}}
+- {{功能 2}}
+- {{功能 3}}
+
+**适用场景：**
+
+- {{场景 1}}
+- {{场景 2}}
+
+## 类别
+
+Developer Tools
+
+## 语言
+
+简体中文 (zh-CN)
+
+## 截图说明
+
+| 截图 | 内容 |
+|------|------|
+| 截图 1 | 扩展弹出面板主界面 |
+| 截图 2 | 设置/配置页面 |
+| 截图 3 | 功能效果展示 |
+| 截图 4 | {{可选高级功能展示}} |
+
+## 权限用途
+
+| 权限 | 用途 |
+|------|------|
+| {{权限名}} | {{用途说明}} |
+````
+
+#### chrome-web-store-listing.en.md 模板（English）
+
+在 `docs/publish/` 目录下创建 `chrome-web-store-listing.en.md`：
+
+````markdown
+# Chrome Web Store Listing Details
+
+> Content for Chrome Web Store developer console listing.
+
+## Short Description
+
+{{One-sentence description of the extension's core functionality, max 132 characters}}
+
+## Detailed Description
+
+{{Feature list + use cases, one per line, 3-5 bullet points recommended}}
+
+**Features:**
+
+- {{Feature 1}}
+- {{Feature 2}}
+- {{Feature 3}}
+
+**Use Cases:**
+
+- {{Use case 1}}
+- {{Use case 2}}
+
+## Category
+
+Developer Tools
+
+## Language
+
+English (en)
+
+## Screenshot Descriptions
+
+| Screenshot | Content |
+|------------|---------|
+| Screenshot 1 | Extension popup main interface |
+| Screenshot 2 | Settings / configuration page |
+| Screenshot 3 | Feature demonstration |
+| Screenshot 4 | {{Optional advanced feature showcase}} |
+
+## Permission Justifications
+
+| Permission | Purpose |
+|------------|---------|
+| {{permission name}} | {{justification}} |
+````
+
+#### edge-addons-listing.md 模板
+
+在 `docs/publish/` 目录下创建 `edge-addons-listing.md`：
+
+````markdown
+# Edge Add-ons 上架信息
+
+> 以下内容用于 Microsoft Edge Add-ons 开发者控制台表单填写。
+
+## 摘要（Short Description）
+
+{{一句话描述扩展核心功能，不超过 132 个字符}}
+
+## 详细描述（Detailed Description）
+
+{{与 Chrome Web Store 详细描述保持一致}}
+
+## 类别
+
+Developer Tools
+
+## 搜索关键词
+
+{{扩展功能相关词，逗号分隔}}，例如：`开发者工具, 调试, 网络请求, {{功能词}}`
+
+## 定价
+
+免费
+
+## 可见性
+
+公开
+
+## 年龄分级
+
+3+
+
+## 截图说明
+
+| 截图 | 内容 |
+|------|------|
+| 截图 1 | 扩展弹出面板主界面 |
+| 截图 2 | 设置/配置页面 |
+| 截图 3 | 功能效果展示 |
+````
+
+#### edge-addons-listing.en.md 模板（English）
+
+在 `docs/publish/` 目录下创建 `edge-addons-listing.en.md`：
+
+````markdown
+# Edge Add-ons Listing Details
+
+> Content for Microsoft Edge Add-ons developer console listing.
+
+## Short Description
+
+{{One-sentence description of the extension's core functionality, max 132 characters}}
+
+## Detailed Description
+
+{{Align with Chrome Web Store detailed description}}
+
+## Category
+
+Developer Tools
+
+## Search Terms
+
+{{Extension feature keywords, comma-separated}} e.g.: `developer tools, debug, network request, {{keyword}}`
+
+## Pricing
+
+Free
+
+## Visibility
+
+Public
+
+## Age Rating
+
+3+
+
+## Screenshot Descriptions
+
+| Screenshot | Content |
+|------------|---------|
+| Screenshot 1 | Extension popup main interface |
+| Screenshot 2 | Settings / configuration page |
+| Screenshot 3 | Feature demonstration |
+````
+
 ### 0.4 报告
 
 完成文档管理后，输出摘要：
 
 ```
 📋 商店上架文档状态：
-  - docs/publish/STORE_SUBMISSION.md      → {{已创建 / 已更新 / 无需变更}}
-  - docs/publish/STORE_SUBMISSION.en.md   → {{已创建 / 已更新 / 无需变更}}
-  - docs/publish/PRIVACY.md               → {{已创建 / 已更新 / 无需变更}}
-  - docs/publish/PRIVACY.en.md            → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/STORE_SUBMISSION.md             → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/STORE_SUBMISSION.en.md          → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/chrome-web-store-listing.md     → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/chrome-web-store-listing.en.md  → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/edge-addons-listing.md          → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/edge-addons-listing.en.md       → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/PRIVACY.md                      → {{已创建 / 已更新 / 无需变更}}
+  - docs/publish/PRIVACY.en.md                   → {{已创建 / 已更新 / 无需变更}}
 ```
 
 ---
@@ -345,7 +549,7 @@ This privacy policy is updated as the extension version changes. Material change
 
 ## 发布前检查清单
 
-- [ ] **Step 0** — 商店上架文档（中英文各一份，共 4 文件）已就绪
+- [ ] **Step 0** — 商店上架文档（中英文各一份，共 8 文件）已就绪
 - [ ] 扩展图标 128x128 已就绪
 - [ ] 至少 1 张功能截图已准备（建议 3-5 张 1280x800）
 - [ ] 详细描述已填写完整
