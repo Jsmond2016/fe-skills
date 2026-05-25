@@ -1,5 +1,15 @@
 {
   "permissions": {
     "allow": ["Bash", "Read", "Edit", "Write", "Agent", "NotebookEdit"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/check-file-size.sh" }
+        ]
+      }
+    ]
   }
 }
