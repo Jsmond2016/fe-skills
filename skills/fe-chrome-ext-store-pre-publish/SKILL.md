@@ -467,7 +467,7 @@ Public
    ```bash
    pnpm build:chrome
    ```
-3. 打包 ZIP：
+3. 打包 ZIP（推荐使用打包脚本，详见「本地打包」章节）：
    ```bash
    cd dist_chrome && zip -r ../extension-v<版本号>.zip . && cd ..
    ```
@@ -556,12 +556,79 @@ Public
 - [ ] 分类选择 "Developer Tools"
 - [ ] 已逐条填写每个权限的用途说明
 - [ ] 数据隐私说明已填写 "不收集用户数据"
-- [ ] ZIP 包已打包
+- [ ] ZIP 包已打包（推荐使用 `pnpm package` 打包脚本）
 - [ ] 版本号已确认
 - [ ] 已在本地测试功能正常
 - [ ] Edge 额外：搜索关键词、年龄分级、发布者资料
 
-## 快速打包
+## 本地打包
+
+### 方案一：使用打包脚本（推荐）
+
+创建 `scripts/package-extension.cjs`，统一管理打包流程：
+
+```javascript
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+function main() {
+  const rootDir = process.cwd();
+  const distDir = path.join(rootDir, 'dist');
+  const artifactsDir = path.join(rootDir, 'artifacts');
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'),
+  );
+  const archiveName = `extension-v${pkg.version}.zip`;
+  const archivePath = path.join(artifactsDir, archiveName);
+
+  if (!fs.existsSync(distDir)) {
+    console.error('dist/ 不存在，请先执行构建');
+    process.exit(1);
+  }
+
+  fs.mkdirSync(artifactsDir, { recursive: true });
+  if (fs.existsSync(archivePath)) fs.rmSync(archivePath);
+
+  const result = spawnSync('zip', ['-r', archivePath, '.', '-x', '*.DS_Store'], {
+    cwd: distDir,
+    stdio: 'inherit',
+  });
+
+  if (result.error) {
+    if (result.error.code === 'ENOENT') {
+      console.error('未找到 zip 命令，请先安装');
+    } else {
+      console.error(result.error.message);
+    }
+    process.exit(1);
+  }
+  if (result.status !== 0) process.exit(result.status ?? 1);
+
+  console.log(`Created ${path.relative(rootDir, archivePath)}`);
+}
+
+main();
+```
+
+在 `package.json` 中添加：
+
+```json
+{
+  "scripts": {
+    "package": "pnpm build && node scripts/package-extension.cjs"
+  }
+}
+```
+
+使用方式：
+
+```bash
+pnpm package
+# 产物: artifacts/extension-v<版本号>.zip
+```
+
+### 方案二：手动打包
 
 ```bash
 # 构建
@@ -570,6 +637,23 @@ pnpm build:chrome
 # 打包
 cd dist_chrome && zip -r ../extension-v$(node -p "require('./package.json').version").zip . && cd ..
 ```
+
+### 打包脚本优势
+
+| 对比 | 手动打包 | 打包脚本 |
+|------|---------|---------|
+| 版本管理 | 需手动指定版本号 | 自动从 package.json 读取 |
+| 输出目录 | 散落在项目根目录 | 统一在 artifacts/ |
+| 产物清理 | 需手动清理旧包 | 自动覆盖 |
+| 错误处理 | 无 | 检查构建目录存在性、命令可用性 |
+| 跨平台 | 依赖 shell | Node.js + zip |
+
+### 注意事项
+
+- ZIP 包内容应为构建产物的**根目录结构**（`manifest.json` 位于 ZIP 根目录），不要将构建目录本身打包进去
+- 使用 `-x '*.DS_Store'` 排除 macOS 系统文件
+- 打包前确认 `dist/` 目录存在且包含完整的构建产物
+- 产物建议统一存放在 `artifacts/` 目录，方便 `.gitignore` 排除
 
 ## Chrome vs Edge 差异
 
