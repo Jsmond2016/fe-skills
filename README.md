@@ -63,24 +63,34 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 
 | Skill | Description |
 |-------|-------------|
+| [fe-chrome-ext-store-pre-publish](./skills/fe-chrome-ext-store-pre-publish) | Chrome 扩展商店发布全流程（CWS + Edge Add-ons） |
 | [fe-code-review](./skills/fe-code-review) | 系统性代码审查，覆盖架构、质量、错误处理、性能、安全、测试 |
 | [fe-commit](./skills/fe-commit) | Commit 提交规范与 Changelog 生成 |
+| [fe-doc-format](./skills/fe-doc-format) | 文档编写规范化（需求/技术/接口/项目文档） |
 | [fe-fullstack-dev](./skills/fe-fullstack-dev) | Full Stack Monorepo 全栈开发最佳实践 |
+| [fe-large-file-refactor](./skills/fe-large-file-refactor) | 大文件自动检测与重构（JS/TS/Vue，超 450 行触发） |
 | [fe-node-dev-stack](./skills/fe-node-dev-stack) | Node.js 开发栈实践 |
 | [fe-project-manager](./skills/fe-project-manager) | 项目管理与项目状态报告 |
 | [fe-react-dev-stack](./skills/fe-react-dev-stack) | React + TypeScript 脚手架与开发最佳实践（Vite + antd + ahooks + Zustand/Jotai + TailwindCSS + Ramda 可选） |
-| [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
-| [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
-| [sync-agent-skills](./skills/sync-agent-skills) | 将 `.agents/skills/` 中已安装的 skills 同步到 `.claude/skills/`、`.codex/skills/` |
 | [fe-set-ai-base](./skills/fe-set-ai-base) | AI 工程化配置初始化（CLAUDE.md + AGENTS.md + DESIGN.md + .claude/） |
 | [fe-setup-basic-project-env](./skills/fe-setup-basic-project-env) | 通用项目基础环境配置（pnpm + ESLint + Prettier + AGENTS.md） |
 | [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包）|
+| [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
+| [frontend-design](./skills/frontend-design) | 创建高品质前端界面，避免 AI 同质化审美 |
+| [sync-agent-skills](./skills/sync-agent-skills) | 将 `.agents/skills/` 中已安装的 skills 同步到 `.claude/skills/`、`.codex/skills/` |
+| [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
 
 > 第三方 Skill（通过 `npm run add-skill` 安装）
 >
-> | Skill | Description |
-> |-------|-------------|
-> | [code-simplifier](./skills/code-simplifier) | 代码简化与重构，提升可读性和可维护性（来自 anthropic/claude-plugins-official） |
+> | Skill | Source | Description |
+> |-------|--------|-------------|
+> | [code-simplifier](./skills/code-simplifier) | anthropic/claude-plugins-official | 代码简化与重构，提升可读性和可维护性 |
+> | [diagnose](./skills/diagnose) | mattpocock/skills | 硬 Bug 与性能回归的规范化诊断循环 |
+> | [grill-me](./skills/grill-me) | mattpocock/skills | 对计划/设计进行追问式讨论，直至达成共识 |
+> | [grill-with-docs](./skills/grill-with-docs) | mattpocock/skills | 结合领域模型的批判性讨论，联动文档更新 |
+> | [tdd](./skills/tdd) | mattpocock/skills | 测试驱动开发（红-绿-重构循环） |
+> | [to-issues](./skills/to-issues) | mattpocock/skills | 将计划/PRD 拆解为可独立领取的 Issue |
+> | [write-a-skill](./skills/write-a-skill) | mattpocock/skills | 创建符合结构的 Agent Skill |
 
 ## 依赖管理（管理第三方 Skill）
 
@@ -151,22 +161,22 @@ npm run validate
 ```
 fe-skills/
 ├── skill-dependencies.json  # Vendor skill 依赖 manifest（自动维护）
-├── skills/                  # Skill 集合
-│   ├── fe-code-review/      # 个人 skill（fe- / sys- 前缀）
-│   │   └── SKILL.md
+├── skills/                  # Skill 集合（23 个）
+│   ├── fe-*/                # 前端自有 skill（fe-code-review、fe-commit 等 13 个）
+│   ├── frontend-design/     # 前端设计 skill
 │   ├── sync-agent-skills/   # 工具 skill：.agents/ → AI 平台目录同步
 │   │   ├── SKILL.md
 │   │   └── scripts/
 │   │       └── sync.cjs
-│   ├── code-simplifier/     # 第三方 skill（通过 URL 导入）
-│   │   ├── SKILL.md         #   清洗后的跨平台格式
-│   │   ├── ORIGINAL.md      #   原始内容备份
-│   │   ├── GENERATION.md    #   来源跟踪
-│   │   └── adapters/        #   多平台适配器
-│   │       ├── cursor.mdc
-│   │       ├── cursor.cursorrules
-│   │       └── copilot.md
-│   └── ...
+│   ├── sys-port-manager/    # 系统工具 skill
+│   └── diagnose/            # 第三方 skill（通过 URL 导入，共 7 个）
+│       ├── SKILL.md         #   清洗后的跨平台格式
+│       ├── ORIGINAL.md      #   原始内容备份
+│       ├── GENERATION.md    #   来源跟踪
+│       └── adapters/        #   多平台适配器
+│           ├── cursor.mdc
+│           ├── cursor.cursorrules
+│           └── copilot.md
 ├── templates/               # 脚手架模板
 ├── scripts/                 # 工具脚本
 │   ├── add-skill.js         # 安装外部 skill（支持 GitHub / URL）
