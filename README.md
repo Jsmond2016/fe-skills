@@ -76,7 +76,6 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 | [fe-setup-basic-project-env](./skills/fe-setup-basic-project-env) | 通用项目基础环境配置（pnpm + ESLint + Prettier + AGENTS.md） |
 | [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包）|
 | [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
-| [frontend-design](./skills/frontend-design) | 创建高品质前端界面，避免 AI 同质化审美 |
 | [sync-agent-skills](./skills/sync-agent-skills) | 将 `.agents/skills/` 中已安装的 skills 同步到 `.claude/skills/`、`.codex/skills/` |
 | [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
 
@@ -86,6 +85,7 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 > |-------|--------|-------------|
 > | [code-simplifier](./skills/code-simplifier) | anthropic/claude-plugins-official | 代码简化与重构，提升可读性和可维护性 |
 > | [diagnose](./skills/diagnose) | mattpocock/skills | 硬 Bug 与性能回归的规范化诊断循环 |
+> | [frontend-design](./skills/frontend-design) | anthropics/skills | 创建高品质前端界面，避免 AI 同质化审美 |
 > | [grill-me](./skills/grill-me) | mattpocock/skills | 对计划/设计进行追问式讨论，直至达成共识 |
 > | [grill-with-docs](./skills/grill-with-docs) | mattpocock/skills | 结合领域模型的批判性讨论，联动文档更新 |
 > | [tdd](./skills/tdd) | mattpocock/skills | 测试驱动开发（红-绿-重构循环） |
@@ -163,13 +163,12 @@ fe-skills/
 ├── skill-dependencies.json  # Vendor skill 依赖 manifest（自动维护）
 ├── skills/                  # Skill 集合（23 个）
 │   ├── fe-*/                # 前端自有 skill（fe-code-review、fe-commit 等 13 个）
-│   ├── frontend-design/     # 前端设计 skill
 │   ├── sync-agent-skills/   # 工具 skill：.agents/ → AI 平台目录同步
 │   │   ├── SKILL.md
 │   │   └── scripts/
 │   │       └── sync.cjs
 │   ├── sys-port-manager/    # 系统工具 skill
-│   └── diagnose/            # 第三方 skill（通过 URL 导入，共 7 个）
+│   └── diagnose/            # 第三方 skill（通过 URL 导入，共 8 个）
 │       ├── SKILL.md         #   清洗后的跨平台格式
 │       ├── ORIGINAL.md      #   原始内容备份
 │       ├── GENERATION.md    #   来源跟踪
