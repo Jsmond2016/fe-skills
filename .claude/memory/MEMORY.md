@@ -5,6 +5,11 @@
 > 跨会话持久记忆索引。每次会话结束时记录关键变更和待办事项。
 > 按日期倒序排列，最新的条目在顶部。
 
+## 2026-05-26
+
+- [skill 创建流程规范](feedback-skill-creation-workflow.md) — 创建 skill 时先 `npm run create-skill` 脚手架，再按 write-a-skill 规范撰写
+- [中文文档标题语言一致性](feedback-cn-title-consistency.md) — 中文文档必须使用中文标题，标题语言与正文保持一致
+
 ## 2026-05-22
 
 - 完整配置 Claude Code / Codex / Cursor 三平台项目级 skills 自动加载
