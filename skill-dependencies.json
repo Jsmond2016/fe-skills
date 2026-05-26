@@ -33,6 +33,14 @@
           "syncedAt": "2026-05-26T02:49:58.713Z"
         }
       }
+    },
+    "https://raw.githubusercontent.com/mattpocock/skills/main/skills/productivity/write-a-skill/SKILL.md": {
+      "installedSkills": {
+        "write-a-skill": {
+          "name": "write-a-skill",
+          "syncedAt": "2026-05-26T03:15:52.556Z"
+        }
+      }
     }
   }
 }
