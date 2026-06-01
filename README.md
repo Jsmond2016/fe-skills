@@ -14,7 +14,7 @@
 在项目根目录执行：
 
 ```bash
-npx skills add Jsmond2016/fe-skills
+npx skills add Jsmond2016/fe-skills --all
 ```
 
 这会在当前项目下创建 `.agents/skills` 目录，Skill 仅在该项目中可用。
