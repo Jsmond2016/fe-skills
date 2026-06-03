@@ -266,6 +266,7 @@ module.exports = {
     'no-console': 'warn',
     'prefer-const': 'error',
     'eqeqeq': ['error', 'always'],
+    'max-lines': ['error', 500],
   },
 };
 ```

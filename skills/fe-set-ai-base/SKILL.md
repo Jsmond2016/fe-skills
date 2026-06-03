@@ -82,6 +82,8 @@ done
 
 CLAUDE.md 可直接引用 AGENTS.md 内容（如安全边界、编码规范等），避免重复；技术架构相关内容则引用 STACK_ARCHITECTURE.md。
 
+> **文件行数约束**：CLAUDE.md 中将声明 `.js`、`.ts`、`.tsx` 文件单文件不超过 500 行，超过时 AI 应自动调用 `code-simplifier` skill 进行重构（抽离函数/模块、封装逻辑等优化）。对应的 ESLint `max-lines` 规则将在项目基础 ESLint 配置中加入，确保提交前可检测。
+
 参考模板：`reference/CLAUDE.md.template`
 
 ### 3.2 AGENTS.md

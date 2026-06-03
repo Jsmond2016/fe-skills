@@ -34,6 +34,7 @@
 ## Code Style
 
 - Follow the existing ESLint / Prettier / Biome configuration
+- `.js`、`.ts`、`.tsx` 单文件不得超过 500 行，超过时 AI 应主动重构（抽离函数/模块、封装逻辑），详见 AGENTS.md 编码规范
 - {{additionalRules}}
 
 ## AI Collaboration

@@ -80,6 +80,7 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'warn',
     'import/order': 'warn',
+    'max-lines': ['error', 500],
   },
   env: {
     node: true,
