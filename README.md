@@ -59,6 +59,49 @@ git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
 
 > **Cursor 用户**：在 Cursor 的设置中配置 Skills Path（设置路径 -> Features -> Skills Path），指向 `~/.skills/fe-skills/skills`。
 
+## 更新
+
+安装后，当 `fe-skills` 仓库有新增或改进的 skill 时，可按以下方式更新。
+
+### 局部更新（当前项目）
+
+```bash
+# 更新所有已安装的 project-level skills
+npx skills update -y
+
+# 更新指定的 skill（用 skill 名，而非包名）
+npx skills update fe-code-review fe-commit -y
+```
+
+`npx skills update` 会读取 `skills-lock.json`，找到各 skill 的来源仓库，从 GitHub 拉取最新版本后重新安装。
+
+### 覆盖重装
+
+```bash
+# 重新拉取并覆盖安装所有 skill（等价于"删除→重装"一步完成）
+npx skills add Jsmond2016/fe-skills --all -y
+```
+
+### 全局更新
+
+```bash
+npx skills update -g -y
+```
+
+### 本地开发场景
+
+如果你同时在本机开发 `fe-skills`（改动尚未 push），用本地路径安装后覆盖重装：
+
+```bash
+# 第一次安装：使用本地路径
+npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
+
+# fe-skills 有本地修改后，重新覆盖安装
+npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
+```
+
+> **注意**：`npx skills update` 从 GitHub 拉取最新版，本地未 push 的改动不会被包含。本地开发阶段建议用上面的路径覆盖方式。
+
 ## Available Skills
 
 | Skill | Description |
@@ -189,6 +232,79 @@ fe-skills/
 ├── .github/                 # GitHub 配置
 └── package.json
 ```
+
+## 常见问题 (FAQ)
+
+### `npx skills update` 提示 "No project skills to update"
+
+**原因**：当前项目从未安装过 skills，或 `skills-lock.json` / `.agents/skills/` 已被删除。`update` 需要读取 `skills-lock.json` 来确定已安装的 skill 列表及其来源仓库。
+
+**解决**：先执行一次安装：
+
+```bash
+npx skills add Jsmond2016/fe-skills --all -y
+```
+
+后续即可使用 `npx skills update -y` 更新。
+
+### `npx skills update Jsmond2016/fe-skills` 没有效果
+
+**原因**：`update` 命令的参数是 **skill 名称**（如 `fe-code-review`、`fe-commit`），不是 **GitHub 包名**（如 `Jsmond2016/fe-skills`）。传入包名会被忽略。
+
+```bash
+# ✅ 正确：传 skill 名
+npx skills update fe-code-review fe-commit -y
+
+# ✅ 正确：不传参则更新全部
+npx skills update -y
+
+# ❌ 错误：不支持包名
+npx skills update Jsmond2016/fe-skills -y
+```
+
+### `npx skills update` 没有拉取我本地的修改
+
+**原因**：`npx skills update` 从 **GitHub** 拉取最新代码。如果你在本地修改了 `fe-skills` 仓库但尚未 `git push`，`update` 无法获取这些改动。
+
+**解决**：本地开发阶段，改用本地路径覆盖安装：
+
+```bash
+npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
+```
+
+### 本地 skills 已删除，如何重新找回？
+
+直接重新添加即可：
+
+```bash
+npx skills add Jsmond2016/fe-skills --all -y
+```
+
+这会重新从 GitHub 拉取所有 skill 并安装到 `.agents/skills/`。
+
+### 如何查看当前安装的 skills？
+
+```bash
+# 查看项目级 skills
+npx skills list
+
+# 查看全局 skills
+npx skills list -g
+
+# JSON 格式输出（机器可读）
+npx skills list --json
+
+# 按 agent 过滤
+npx skills list -a claude-code
+```
+
+### skills-lock.json 的作用是什么？
+
+`skills-lock.json` 是 `npx skills` 自动维护的锁文件，记录每个已安装 skill 的名称、来源仓库、ref、安装路径等信息。`update` 命令依赖它来判断需要更新哪些 skill。
+
+- 位于项目根目录（project-level）或 `~/.skills/`（global）
+- 由 `npx skills add` 自动创建，`npx skills update` 自动更新
+- **不应手动编辑**，但应纳入版本控制
 
 ## 贡献
 
