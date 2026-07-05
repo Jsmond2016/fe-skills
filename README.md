@@ -21,13 +21,23 @@ npx skills add Jsmond2016/fe-skills --all
 
 ### 安装后的同步
 
-`npx skills add` 将 skills 安装到 `.agents/skills/` 目录，但 Claude Code 识别 `.claude/skills/`，Codex 识别 `.codex/skills/`。安装完成后，执行同步脚本一键链接到各 AI 平台目录：
+`npx skills add` 将 skills 安装到 `.agents/skills/` 目录，但 Claude Code 识别 `.claude/skills/`，Codex 识别 `.codex/skills/`。安装完成后，推荐执行 **`/fe-skills-init`** 一键完成所有后续配置：
+
+```bash
+# 在 Claude Code 中执行
+/fe-skills-init
+```
+
+该 skill 会自动：
+1. 将 skills 同步到 `.claude/skills/`、`.codex/skills/`
+2. 创建/合并 `.claude/settings.local.json` 权限配置
+3. 验证并输出配置报告
+
+也可手动执行同步脚本：
 
 ```bash
 node .agents/skills/sync-agent-skills/scripts/sync.cjs
 ```
-
-该脚本会自动创建 `.claude/skills/` 和 `.codex/skills/`（如不存在），并为所有 skill 创建 symlink。
 
 ### 全局安装（所有项目）
 
@@ -102,11 +112,97 @@ npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
 
 > **注意**：`npx skills update` 从 GitHub 拉取最新版，本地未 push 的改动不会被包含。本地开发阶段建议用上面的路径覆盖方式。
 
+## 权限配置
+
+Skills 在执行时可能需要调用 Bash 命令（git、pnpm、npx 等），Claude Code 默认会逐条请求授权。通过配置 `.claude/settings.local.json`，可以预授权特定命令，避免反复提示。
+
+> **为什么用 `settings.local.json` 而非 `settings.json`？**  
+> 权限配置属于个人偏好和环境相关，不应纳入版本控制。`settings.local.json` 不会被 git 追踪，适合存放本地权限策略。
+
+### 推荐配置（中等粒度）
+
+以下配置按命令前缀分组授权，覆盖所有 skill 的常规操作，同时保留一定安全性：
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "WebSearch",
+      "WebFetch",
+      "Agent",
+
+      "Bash(git *)",
+      "Bash(pnpm *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(mkdir *)",
+      "Bash(chmod *)",
+      "Bash(cp *)",
+      "Bash(rm *)",
+      "Bash(zip *)",
+      "Bash(lsof *)",
+      "Bash(ss *)",
+      "Bash(fuser *)",
+      "Bash(curl *)"
+    ]
+  }
+}
+```
+
+使用方法：
+
+```bash
+# 在项目根目录创建 settings.local.json（不要用 settings.json，避免冲突）
+cat > .claude/settings.local.json << 'EOF'
+{
+  "permissions": {
+    "allow": [
+      "Read", "Write", "Edit", "WebSearch", "WebFetch", "Agent",
+      "Bash(git *)", "Bash(pnpm *)", "Bash(npm *)", "Bash(npx *)", "Bash(node *)",
+      "Bash(cat *)", "Bash(ls *)", "Bash(grep *)", "Bash(find *)",
+      "Bash(mkdir *)", "Bash(chmod *)", "Bash(cp *)", "Bash(rm *)", "Bash(zip *)",
+      "Bash(lsof *)", "Bash(ss *)", "Bash(fuser *)", "Bash(curl *)"
+    ]
+  }
+}
+EOF
+```
+
+### 宽松版（免打扰）
+
+如果不想被任何权限提示打扰，可以直接允许所有工具：
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash", "Read", "Write", "Edit", "WebSearch", "WebFetch", "Agent"]
+  }
+}
+```
+
+### 自动初始化
+
+在执行 `fe-set-ai-base` skill 时，会根据 `reference/claude-settings.json` 模板自动生成 `.claude/settings.json`。如需使用本地专属权限配置，请在初始化后手动创建 `.claude/settings.local.json`。
+
+| 文件 | 用途 | 是否提交 |
+|:-----|:-----|:---------|
+| `.claude/settings.json` | 项目共享配置（技能路径、Hook 等） | ✅ 提交 |
+| `.claude/settings.local.json` | 个人权限策略 | ❌ 不提交 |
+
 ## Available Skills
 
 | Skill | Description |
 |-------|-------------|
 | [fe-chrome-ext-store-pre-publish](./skills/fe-chrome-ext-store-pre-publish) | Chrome 扩展商店发布全流程（CWS + Edge Add-ons） |
+| [fe-skills-init](./skills/fe-skills-init) | 安装 fe-skills 后的一站式初始化 — 自动同步 skills 到各 AI 平台目录，配置权限，开箱即用 |
 | [fe-code-review](./skills/fe-code-review) | 系统性代码审查，覆盖架构、质量、错误处理、性能、安全、测试 |
 | [fe-commit](./skills/fe-commit) | Commit 提交规范与 Changelog 生成 |
 | [fe-doc-format](./skills/fe-doc-format) | 文档编写规范化（需求/技术/接口/项目文档） |

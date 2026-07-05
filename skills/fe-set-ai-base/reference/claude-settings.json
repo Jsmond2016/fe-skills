@@ -1,6 +1,31 @@
 {
   "permissions": {
-    "allow": ["Bash", "Read", "Edit", "Write", "Agent", "NotebookEdit"],
-    "allowSaved": true
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "WebSearch",
+      "WebFetch",
+      "Agent",
+
+      "Bash(git *)",
+      "Bash(pnpm *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(mkdir *)",
+      "Bash(chmod *)",
+      "Bash(cp *)",
+      "Bash(rm *)",
+      "Bash(zip *)",
+      "Bash(lsof *)",
+      "Bash(ss *)",
+      "Bash(fuser *)",
+      "Bash(curl *)"
+    ]
   }
 }
