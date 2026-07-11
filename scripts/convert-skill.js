@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveInside, validateSkillName } = require('./lib/security');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
@@ -86,7 +87,13 @@ function main() {
     process.exit(0);
   }
 
-  const skillDir = path.join(SKILLS_DIR, skillName);
+  try {
+    validateSkillName(skillName);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+  const skillDir = resolveInside(SKILLS_DIR, skillName);
   const skillMdPath = path.join(skillDir, 'SKILL.md');
 
   if (!fs.existsSync(skillMdPath)) {

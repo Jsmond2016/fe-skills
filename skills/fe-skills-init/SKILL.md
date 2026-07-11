@@ -110,9 +110,9 @@ ls .codex/skills/ 2>/dev/null | head -20
 - 如果文件已存在，**合并**而非覆盖，保留用户已有的自定义配置
 - 只补充缺失的、skill 需要的权限项
 
-### 3.2 推荐的权限基准
+### 3.2 推荐的最小权限基准
 
-根据 fe-skills 中所有 skill 的使用情况，推荐以下权限集：
+默认仅预授权常用只读操作。安装依赖、网络请求、文件删除和 Git 写操作必须逐次确认：
 
 ```json
 {
@@ -124,24 +124,15 @@ ls .codex/skills/ 2>/dev/null | head -20
       "WebSearch",
       "WebFetch",
       "Agent",
-      "Bash(git *)",
-      "Bash(pnpm *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(node *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
       "Bash(cat *)",
       "Bash(ls *)",
       "Bash(grep *)",
       "Bash(find *)",
-      "Bash(mkdir *)",
-      "Bash(chmod *)",
-      "Bash(cp *)",
-      "Bash(rm *)",
-      "Bash(zip *)",
       "Bash(lsof *)",
-      "Bash(ss *)",
-      "Bash(fuser *)",
-      "Bash(curl *)"
+      "Bash(ss *)"
     ]
   }
 }
@@ -182,24 +173,15 @@ cat > .claude/settings.local.json << 'EOF'
       "WebSearch",
       "WebFetch",
       "Agent",
-      "Bash(git *)",
-      "Bash(pnpm *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(node *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
       "Bash(cat *)",
       "Bash(ls *)",
       "Bash(grep *)",
       "Bash(find *)",
-      "Bash(mkdir *)",
-      "Bash(chmod *)",
-      "Bash(cp *)",
-      "Bash(rm *)",
-      "Bash(zip *)",
       "Bash(lsof *)",
-      "Bash(ss *)",
-      "Bash(fuser *)",
-      "Bash(curl *)"
+      "Bash(ss *)"
     ]
   }
 }

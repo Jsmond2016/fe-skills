@@ -65,6 +65,12 @@ function syncTarget(targetDir, skillNames, dryRun) {
   for (const name of existing) {
     if (!skillSet.has(name)) {
       const linkPath = path.join(absTarget, name);
+      const stats = fs.lstatSync(linkPath);
+      if (!stats.isSymbolicLink()) continue;
+      const rawTarget = fs.readlinkSync(linkPath);
+      const resolvedTarget = path.resolve(absTarget, rawTarget);
+      const relativeTarget = path.relative(SKILLS_DIR, resolvedTarget);
+      if (relativeTarget.startsWith('..') || path.isAbsolute(relativeTarget)) continue;
       if (dryRun) {
         console.log(`  rm ${targetDir}/${name}`);
       } else {

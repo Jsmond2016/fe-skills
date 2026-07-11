@@ -2,7 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
+const { resolveInside, validateGithubRepo, validateSkillName } = require('./lib/security');
+const { replaceDirectory } = require('./lib/files');
+const { readManifest: readManifestFile } = require('./lib/manifest');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
@@ -10,11 +13,7 @@ const MANIFEST_PATH = path.join(ROOT, 'skill-dependencies.json');
 const TEMP_PREFIX = '.sync-tmp-';
 
 function readManifest() {
-  try {
-    return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
-  } catch {
-    return { version: 1, github: {} };
-  }
+  return readManifestFile(MANIFEST_PATH, () => ({ version: 1, github: {}, url: {} }));
 }
 
 function getCommitHash(dir) {
@@ -22,8 +21,9 @@ function getCommitHash(dir) {
 }
 
 function cloneRepo(repo, dest) {
+  validateGithubRepo(repo);
   const url = `https://github.com/${repo}.git`;
-  execSync(`git clone --depth 1 ${url} "${dest}"`, { stdio: 'pipe' });
+  execFileSync('git', ['clone', '--depth', '1', url, dest], { stdio: 'pipe' });
 }
 
 function generateGenerationMd(repo, commitHash, skillRelPath) {
@@ -70,8 +70,8 @@ async function main() {
       const latestCommit = getCommitHash(tempDir);
 
       for (const skillName of skills) {
-        const skillDir = path.join(SKILLS_DIR, skillName);
-        const genPath = path.join(skillDir, 'GENERATION.md');
+        validateSkillName(skillName);
+        const skillDir = resolveInside(SKILLS_DIR, skillName);
         const recorded = entry.installedSkills[skillName];
 
         if (!fs.existsSync(skillDir)) {
@@ -115,23 +115,13 @@ async function main() {
 
         // Re-install
         console.log(`  Updating ${skillName}...`);
-        if (!fs.existsSync(skillDir)) {
-          fs.mkdirSync(skillDir, { recursive: true });
-        }
-
-        const entries = fs.readdirSync(srcDir, { withFileTypes: true });
-        for (const e of entries) {
-          if (e.name.startsWith('.git')) continue;
-          const srcPath = path.join(srcDir, e.name);
-          const destPath = path.join(skillDir, e.name);
-          if (e.isDirectory()) {
-            execSync(`cp -R "${srcPath}" "${destPath}"`, { stdio: 'pipe' });
-          } else {
-            fs.copyFileSync(srcPath, destPath);
-          }
-        }
-
-        fs.writeFileSync(genPath, generateGenerationMd(repo, latestCommit, skillRelPath));
+        replaceDirectory(srcDir, skillDir, {
+          exclude: ['.git'],
+          prepare: stagingDir => fs.writeFileSync(
+            path.join(stagingDir, 'GENERATION.md'),
+            generateGenerationMd(repo, latestCommit, skillRelPath),
+          ),
+        });
 
         // Update manifest
         entry.installedSkills[skillName] = {

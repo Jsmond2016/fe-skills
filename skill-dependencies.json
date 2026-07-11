@@ -10,14 +10,6 @@
         }
       }
     },
-    "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/plugins/frontend-design/skills/frontend-design/SKILL.md": {
-      "installedSkills": {
-        "frontend-design": {
-          "name": "frontend-design",
-          "syncedAt": "2026-05-22T02:55:04.121Z"
-        }
-      }
-    },
     "https://raw.githubusercontent.com/mattpocock/skills/main/skills/productivity/grill-me/SKILL.md": {
       "installedSkills": {
         "grill-me": {

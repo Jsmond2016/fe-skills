@@ -8,24 +8,15 @@
       "WebFetch",
       "Agent",
 
-      "Bash(git *)",
-      "Bash(pnpm *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(node *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
       "Bash(cat *)",
       "Bash(ls *)",
       "Bash(grep *)",
       "Bash(find *)",
-      "Bash(mkdir *)",
-      "Bash(chmod *)",
-      "Bash(cp *)",
-      "Bash(rm *)",
-      "Bash(zip *)",
       "Bash(lsof *)",
-      "Bash(ss *)",
-      "Bash(fuser *)",
-      "Bash(curl *)"
+      "Bash(ss *)"
     ]
   }
 }

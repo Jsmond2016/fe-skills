@@ -2,17 +2,15 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveInside, validateSkillName } = require('./lib/security');
+const { readManifest: readManifestFile } = require('./lib/manifest');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const MANIFEST_PATH = path.join(ROOT, 'skill-dependencies.json');
 
 function readManifest() {
-  try {
-    return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
-  } catch {
-    return { version: 1, github: {} };
-  }
+  return readManifestFile(MANIFEST_PATH, () => ({ version: 1, github: {}, url: {} }));
 }
 
 function writeManifest(m) {
@@ -43,7 +41,14 @@ function main() {
   let notFound = 0;
 
   for (const skillName of args) {
-    const skillDir = path.join(SKILLS_DIR, skillName);
+    try {
+      validateSkillName(skillName);
+    } catch (error) {
+      console.log(`! ${skillName}: ${error.message}`);
+      notFound++;
+      continue;
+    }
+    const skillDir = resolveInside(SKILLS_DIR, skillName);
     const genPath = path.join(skillDir, 'GENERATION.md');
 
     if (!fs.existsSync(skillDir)) {
@@ -73,6 +78,12 @@ function main() {
         }
         break;
       }
+    }
+
+    for (const url of Object.keys(manifest.url || {})) {
+      const installed = manifest.url[url].installedSkills || {};
+      delete installed[skillName];
+      if (Object.keys(installed).length === 0) delete manifest.url[url];
     }
 
     removed++;

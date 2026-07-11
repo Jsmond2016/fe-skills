@@ -6,12 +6,18 @@ on:
     paths:
       - 'skills/**'
       - 'scripts/validate-skills.js'
+      - 'scripts/**'
+      - 'test/**'
+      - 'skill-dependencies.json'
       - 'package.json'
   pull_request:
     branches: [main, master]
     paths:
       - 'skills/**'
       - 'scripts/validate-skills.js'
+      - 'scripts/**'
+      - 'test/**'
+      - 'skill-dependencies.json'
       - 'package.json'
 
 jobs:
@@ -28,5 +34,8 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
       - name: Validate skills
-        run: node scripts/validate-skills.js
+        run: npm test

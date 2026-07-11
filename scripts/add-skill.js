@@ -2,7 +2,15 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
+const {
+  resolveInside,
+  validateGithubRepo,
+  validateHttpUrl,
+  validateSkillName,
+} = require('./lib/security');
+const { replaceDirectory } = require('./lib/files');
+const { readManifest: readManifestFile } = require('./lib/manifest');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
@@ -29,11 +37,7 @@ Examples:
 // ── Utils ──
 
 function readManifest() {
-  try {
-    return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
-  } catch {
-    return { version: 2, github: {}, url: {} };
-  }
+  return readManifestFile(MANIFEST_PATH, () => ({ version: 2, github: {}, url: {} }));
 }
 
 function writeManifest(m) {
@@ -113,8 +117,9 @@ function parseGithubArg(arg) {
 // ── GitHub cloning & discovery ──
 
 function cloneRepo(repo, dest) {
+  validateGithubRepo(repo);
   const url = `https://github.com/${repo}.git`;
-  execSync(`git clone --depth 1 ${url} "${dest}"`, { stdio: 'pipe' });
+  execFileSync('git', ['clone', '--depth', '1', url, dest], { stdio: 'pipe' });
 }
 
 function readFrontmatterName(skillMdPath) {
@@ -159,7 +164,7 @@ function findSkillsInRepo(repoDir) {
 // ── Conflict check ──
 
 function isPersonalSkill(name) {
-  const dir = path.join(SKILLS_DIR, name);
+  const dir = resolveInside(SKILLS_DIR, name);
   return fs.existsSync(dir) && !fs.existsSync(path.join(dir, 'GENERATION.md'));
 }
 
@@ -205,10 +210,10 @@ ${body}
 // ── Install from URL ──
 
 function installFromUrl(url, nameOverride, dryRun) {
-  const rawUrl = toRawGithubUrl(url);
+  const rawUrl = validateHttpUrl(toRawGithubUrl(url));
 
   console.log(`Fetching ${rawUrl}...`);
-  const content = execSync(`curl -sL "${rawUrl}"`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+  const content = execFileSync('curl', ['-fsSL', rawUrl], { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
 
   if (!content || content.length < 10) {
     console.error(`  ✗ Failed to fetch content from ${rawUrl}`);
@@ -222,19 +227,25 @@ function installFromUrl(url, nameOverride, dryRun) {
     console.error(`  ✗ Cannot determine skill name. Provide --name <name> or ensure the source has a "name:" field in frontmatter.`);
     return false;
   }
+  try {
+    validateSkillName(skillName);
+  } catch (error) {
+    console.error(`  ✗ ${error.message}`);
+    return false;
+  }
 
   if (isPersonalSkill(skillName)) {
     console.error(`  ✗ Cannot install "${skillName}": a personal skill with this name already exists.`);
     return false;
   }
 
-  const destDir = path.join(SKILLS_DIR, skillName);
+  const destDir = resolveInside(SKILLS_DIR, skillName);
 
   // Check if already installed
   const genPath = path.join(destDir, 'GENERATION.md');
   if (fs.existsSync(genPath)) {
     const gen = fs.readFileSync(genPath, 'utf-8');
-    const src = gen.match(/sourceUrl:\s*(.+)/)?.[1];
+    const src = gen.match(/source(?:Url)?:\s*(.+)/)?.[1];
     if (src === rawUrl) {
       // Check if content is the same (compare body length as heuristic)
       const existingSkillMd = path.join(destDir, 'SKILL.md');
@@ -308,6 +319,8 @@ syncedAt: ${new Date().toISOString()}
 // ── Install from GitHub ──
 
 function installFromGithub(repo, targetSkill, dryRun) {
+  validateGithubRepo(repo);
+  if (targetSkill) validateSkillName(targetSkill);
   const rName = repoName(repo);
   const tempDir = path.join(ROOT, `${TEMP_PREFIX}${rName}`);
   let exitCode = 0;
@@ -354,7 +367,7 @@ function installFromGithub(repo, targetSkill, dryRun) {
 
 function installGithubSkill(skill, repo, commitHash, repoDir, dryRun) {
   const { name, dir: srcDir } = skill;
-  const destDir = path.join(SKILLS_DIR, name);
+  const destDir = resolveInside(SKILLS_DIR, name);
 
   if (isPersonalSkill(name)) {
     console.error(`  ✗ Cannot install "${name}": a personal skill with this name already exists.`);
@@ -384,19 +397,6 @@ function installGithubSkill(skill, repo, commitHash, repoDir, dryRun) {
   }
 
   console.log(`Installing ${name}...`);
-  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-
-  for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.git')) continue;
-    const s = path.join(srcDir, entry.name);
-    const d = path.join(destDir, entry.name);
-    if (entry.isDirectory()) {
-      execSync(`cp -R "${s}" "${d}"`, { stdio: 'pipe' });
-    } else {
-      fs.copyFileSync(s, d);
-    }
-  }
-
   const skillRelPath = path.relative(repoDir, srcDir);
   const generation = `---
 source: ${repo}
@@ -407,7 +407,10 @@ skillPath: ${skillRelPath}/SKILL.md
 syncedAt: ${new Date().toISOString()}
 ---
 `;
-  fs.writeFileSync(genPath, generation);
+  replaceDirectory(srcDir, destDir, {
+    exclude: ['.git'],
+    prepare: stagingDir => fs.writeFileSync(path.join(stagingDir, 'GENERATION.md'), generation),
+  });
 
   const manifest = readManifest();
   if (!manifest.github) manifest.github = {};

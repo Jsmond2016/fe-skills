@@ -1,6 +1,21 @@
 {
   "permissions": {
-    "allow": ["Bash", "Read", "Edit", "Write", "Agent", "NotebookEdit"]
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Agent",
+      "NotebookEdit",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(lsof *)",
+      "Bash(ss *)"
+    ]
   },
   "hooks": {
     "PostToolUse": [

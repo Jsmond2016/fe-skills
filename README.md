@@ -1,5 +1,9 @@
 # FE Skills
 
+> **更新时间**：2026-07-11；**使用模型**：GPT-5；**用户**：jsmond2016
+
+---
+
 前端开发 Skills 集合，兼容 [Vercel Labs Skills CLI](https://github.com/vercel-labs/skills)。安装后可在 Claude Code、Cursor 等 50+ AI Agent 工具中使用。
 
 ## 前提条件
@@ -119,9 +123,9 @@ Skills 在执行时可能需要调用 Bash 命令（git、pnpm、npx 等），Cl
 > **为什么用 `settings.local.json` 而非 `settings.json`？**  
 > 权限配置属于个人偏好和环境相关，不应纳入版本控制。`settings.local.json` 不会被 git 追踪，适合存放本地权限策略。
 
-### 推荐配置（中等粒度）
+### 推荐配置（最小权限）
 
-以下配置按命令前缀分组授权，覆盖所有 skill 的常规操作，同时保留一定安全性：
+以下配置仅预授权常用只读操作。安装依赖、网络请求、文件删除和 Git 写操作仍会逐次请求确认：
 
 ```json
 {
@@ -134,24 +138,15 @@ Skills 在执行时可能需要调用 Bash 命令（git、pnpm、npx 等），Cl
       "WebFetch",
       "Agent",
 
-      "Bash(git *)",
-      "Bash(pnpm *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(node *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
       "Bash(cat *)",
       "Bash(ls *)",
       "Bash(grep *)",
       "Bash(find *)",
-      "Bash(mkdir *)",
-      "Bash(chmod *)",
-      "Bash(cp *)",
-      "Bash(rm *)",
-      "Bash(zip *)",
       "Bash(lsof *)",
-      "Bash(ss *)",
-      "Bash(fuser *)",
-      "Bash(curl *)"
+      "Bash(ss *)"
     ]
   }
 }
@@ -166,27 +161,16 @@ cat > .claude/settings.local.json << 'EOF'
   "permissions": {
     "allow": [
       "Read", "Write", "Edit", "WebSearch", "WebFetch", "Agent",
-      "Bash(git *)", "Bash(pnpm *)", "Bash(npm *)", "Bash(npx *)", "Bash(node *)",
+      "Bash(git status *)", "Bash(git diff *)", "Bash(git log *)",
       "Bash(cat *)", "Bash(ls *)", "Bash(grep *)", "Bash(find *)",
-      "Bash(mkdir *)", "Bash(chmod *)", "Bash(cp *)", "Bash(rm *)", "Bash(zip *)",
-      "Bash(lsof *)", "Bash(ss *)", "Bash(fuser *)", "Bash(curl *)"
+      "Bash(lsof *)", "Bash(ss *)"
     ]
   }
 }
 EOF
 ```
 
-### 宽松版（免打扰）
-
-如果不想被任何权限提示打扰，可以直接允许所有工具：
-
-```json
-{
-  "permissions": {
-    "allow": ["Bash", "Read", "Write", "Edit", "WebSearch", "WebFetch", "Agent"]
-  }
-}
-```
+> 不建议预授权不受限制的 `Bash` 或 `Bash(rm *)`、`Bash(git *)`。这会让删除、推送和任意脚本执行绕过逐次确认。
 
 ### 自动初始化
 

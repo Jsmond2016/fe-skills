@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const YAML = require('yaml');
 
 const SKILLS_DIR = path.join(__dirname, '..', 'skills');
 const NAME_REGEX = /^[a-z0-9-]+$/;
@@ -9,27 +10,7 @@ const NAME_REGEX = /^[a-z0-9-]+$/;
 function parseFrontmatter(content) {
   const match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
   if (!match) return null;
-
-  const lines = match[1].split('\n');
-  const frontmatter = {};
-
-  for (const line of lines) {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1) continue;
-
-    const key = line.slice(0, colonIndex).trim();
-    let value = line.slice(colonIndex + 1).trim();
-
-    // Remove surrounding quotes if present
-    if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
-    }
-
-    frontmatter[key] = value;
-  }
-
-  return frontmatter;
+  return YAML.parse(match[1]);
 }
 
 function validateSkill(skillDir) {
@@ -46,14 +27,20 @@ function validateSkill(skillDir) {
   const content = fs.readFileSync(skillFile, 'utf-8');
 
   // Check frontmatter exists
-  const frontmatter = parseFrontmatter(content);
+  let frontmatter;
+  try {
+    frontmatter = parseFrontmatter(content);
+  } catch (error) {
+    errors.push(`Malformed YAML frontmatter: ${error.message}`);
+    return { name: skillName, valid: false, errors };
+  }
   if (!frontmatter) {
     errors.push('Missing or malformed YAML frontmatter');
     return { name: skillName, valid: false, errors };
   }
 
   // Check required fields
-  if (!frontmatter.name) {
+  if (typeof frontmatter.name !== 'string' || !frontmatter.name.trim()) {
     errors.push('Missing required field: name');
   } else {
     // Validate name format
@@ -66,7 +53,7 @@ function validateSkill(skillDir) {
     }
   }
 
-  if (!frontmatter.description) {
+  if (typeof frontmatter.description !== 'string' || !frontmatter.description.trim()) {
     errors.push('Missing required field: description');
   }
 

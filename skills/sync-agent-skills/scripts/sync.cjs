@@ -93,6 +93,12 @@ function syncTarget(targetDir, skillNames, sourceDir, dryRun, useCopy) {
   for (const name of existing) {
     if (!skillSet.has(name)) {
       const linkPath = path.join(targetDir, name);
+      const stats = fs.lstatSync(linkPath);
+      if (!stats.isSymbolicLink()) continue;
+      const rawTarget = fs.readlinkSync(linkPath);
+      const resolvedTarget = path.resolve(targetDir, rawTarget);
+      const relativeTarget = path.relative(sourceDir, resolvedTarget);
+      if (relativeTarget.startsWith('..') || path.isAbsolute(relativeTarget)) continue;
       if (dryRun) {
         console.log(`  rm ${path.relative(path.dirname(targetDir), linkPath)}`);
       } else {
@@ -184,7 +190,10 @@ function main() {
 
   if (customSource) {
     sourceDir = customSource;
-    projectRoot = path.dirname(sourceDir);
+    const sourceParent = path.dirname(sourceDir);
+    projectRoot = path.basename(sourceDir) === 'skills' && path.basename(sourceParent) === '.agents'
+      ? path.dirname(sourceParent)
+      : sourceParent;
   } else {
     const resolved = resolveAgentSource(__dirname);
     if (!resolved) {

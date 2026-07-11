@@ -2,17 +2,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const { readManifest: readManifestFile } = require('./lib/manifest');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const MANIFEST_PATH = path.join(ROOT, 'skill-dependencies.json');
 
 function readManifest() {
-  try {
-    return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
-  } catch {
-    return { version: 1, github: {} };
-  }
+  return readManifestFile(MANIFEST_PATH, () => ({ version: 1, github: {}, url: {} }));
 }
 
 function formatDate(iso) {
