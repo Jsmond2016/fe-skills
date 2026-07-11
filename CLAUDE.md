@@ -31,7 +31,7 @@ npm run validate       # / npm test — 校验所有 skill
 
 ## Codex
 
-`.codex/skills/` 中已创建 symlink 指向 `skills/` 下所有技能，`.codex/settings.json` 引用 Claude Code 的权限配置，在项目根目录运行 Codex 时自动可用。
+当前 `npx skills` 将 Codex project-level skills 安装并记录在 `.agents/skills/`。本仓库保留 `.codex/skills/` symlink 作为旧版本兼容和本地开发便利，不再作为消费者项目的默认安装目标。
 
 ## Cursor
 
@@ -39,30 +39,31 @@ npm run validate       # / npm test — 校验所有 skill
 
 ## 自动同步
 
-`scripts/sync-agent-links.js` 在以下时机自动同步 `skills/` → `.claude/skills/`、`.codex/skills/` 的 symlink：
+`scripts/sync-agent-links.js` 在以下时机自动同步 `skills/` → `.claude/skills/`，并保留 `.codex/skills/` legacy symlink：
 - `npm run create-skill` / `add-skill` / `remove-skill` 执行后
 - `npm install` 或 `npm prepare` 执行时（含 `git clone` 后自动执行）
 
 ## 消费端：从 .agents/skills/ 同步到平台目录
 
-`skills/sync-agent-skills/` 是一个工具 skill，内置了同步脚本，解决消费者项目执行 `npx skills add fe-skills` 后 `.agents/skills/` → `.claude/skills/`、`.codex/skills/` 的同步问题。
+`skills/sync-agent-skills/` 是一个工具 skill，内置了同步脚本。当前 Codex 可直接使用 `npx skills add --agent codex` 生成的 `.agents/skills/`；该脚本默认只解决 Claude Code 需要 `.claude/skills/` 的同步问题。`.codex/skills/` 仅在旧版兼容场景下显式同步。
 
 消费者工作流：
 
 ```bash
-# 1. 安装 skills（生成 .agents/skills/）
-npx skills add fe-skills
+# 1. 安装 skills 到 Codex（生成 .agents/skills/）
+npx skills add fe-skills --skill '*' --agent codex -y
 
-# 2. 一键同步到所有 AI 平台目录
+# 2. 如需 Claude Code 也可用，同步到 .claude/skills/
 node .agents/skills/sync-agent-skills/scripts/sync.cjs
 
 # 可选参数
-node .agents/skills/sync-agent-skills/scripts/sync.cjs --dry-run      # 预览
-node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform claude  # 仅 Claude Code
-node .agents/skills/sync-agent-skills/scripts/sync.cjs --copy          # 复制而非链接
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --dry-run         # 预览
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform claude # 仅 Claude Code
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform codex  # 旧版 Codex 兼容
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --copy            # 复制而非链接
 ```
 
-原理：`npx skills add` 将 `skills/sync-agent-skills/` 安装到 `.agents/skills/sync-agent-skills/`，其 `scripts/sync.cjs` 可自动检测 `.agents/skills/` 位置并扫描所有 skill，为每个已发现的 AI 平台目录创建 symlink。
+原理：`npx skills add` 将 `skills/sync-agent-skills/` 安装到 `.agents/skills/sync-agent-skills/`，其 `scripts/sync.cjs` 可自动检测 `.agents/skills/` 位置并扫描所有 skill，为需要额外注册目录的平台创建 symlink。
 
 ## Skill 规范
 

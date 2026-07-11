@@ -3,14 +3,16 @@
 /**
  * sync.cjs — sync-agent-skills
  *
- * 将 .agents/skills/ 下的 skills 同步到 AI 平台目录（.claude/skills/、.codex/skills/）。
+ * 将 .agents/skills/ 下的 skills 同步到需要额外注册目录的 AI 平台。
+ * 当前 npx skills CLI 已将 Codex project-level skills 安装到 .agents/skills/，
+ * 因此默认只同步 Claude Code；.codex/skills 仅作为 legacy 兼容目标。
  *
  * 使用方式（在项目根目录执行）：
  *   node .agents/skills/sync-agent-skills/scripts/sync.cjs
  *
  * 选项：
  *   --dry-run            预览变更
- *   --platform <names>   仅同步指定平台，如 claude,codex（默认全部）
+ *   --platform <names>   仅同步指定平台，如 claude,codex（默认 claude）
  *   --copy               复制而非符号链接
  *   --source <dir>       自定义源目录（默认自动检测）
  *   --help, -h           显示帮助
@@ -62,12 +64,13 @@ function getSkillNames(sourceDir) {
   return names.sort();
 }
 
-const ALL_PLATFORMS = ['claude', 'codex'];
+const DEFAULT_PLATFORMS = ['claude'];
+const SUPPORTED_PLATFORMS = ['claude', 'codex'];
 
 function detectPlatforms(root) {
-  // 默认同步所有平台，目录不存在会自动创建
-  // --platform 参数用于限制范围而非发现
-  return ALL_PLATFORMS;
+  // Codex 由 npx skills CLI 直接使用 .agents/skills/。
+  // .codex/skills 仍可通过 --platform codex 显式创建，用于旧版本兼容。
+  return DEFAULT_PLATFORMS;
 }
 
 // ── 同步 ──
@@ -141,12 +144,15 @@ function showHelp() {
   console.log(`
   用法: node .agents/skills/sync-agent-skills/scripts/sync.cjs [选项]
 
-  将 .agents/skills/ 中的 skills 同步到 AI 平台目录
-  （.claude/skills/、.codex/skills/）。
+  将 .agents/skills/ 中的 skills 同步到需要额外注册目录的 AI 平台。
+
+  当前 npx skills CLI 已将 Codex project-level skills 安装到 .agents/skills/，
+  默认仅同步 Claude Code 的 .claude/skills/。如需兼容旧版 Codex，可显式
+  指定 --platform codex。
 
   选项:
     --dry-run            预览变更，不实际执行
-    --platform <names>   仅同步指定平台，如 claude,codex（默认：全部）
+    --platform <names>   仅同步指定平台，如 claude,codex（默认：claude）
     --copy               复制而非符号链接
     --source <dir>       自定义源目录（默认：从脚本位置自动向上查找）
     --help, -h           显示此帮助
@@ -155,6 +161,7 @@ function showHelp() {
     node .agents/skills/sync-agent-skills/scripts/sync.cjs
     node .agents/skills/sync-agent-skills/scripts/sync.cjs --dry-run
     node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform claude
+    node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform codex
     node .agents/skills/sync-agent-skills/scripts/sync.cjs --copy
   `);
 }
@@ -218,6 +225,12 @@ function main() {
 
   // ── 确定目标平台 ──
   const platforms = platformFilter || detectPlatforms(projectRoot);
+  const unsupported = platforms.filter(platform => !SUPPORTED_PLATFORMS.includes(platform));
+  if (unsupported.length > 0) {
+    console.error(`✖ 不支持的平台: ${unsupported.join(', ')}`);
+    console.error(`  支持的平台: ${SUPPORTED_PLATFORMS.join(', ')}`);
+    process.exit(1);
+  }
 
   // ── 同步 ──
   let totalCreated = 0;

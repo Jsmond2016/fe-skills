@@ -27,7 +27,7 @@ fe-skills/
 ├── scripts/             # 技能管理工具
 ├── templates/           # 新技能模板
 ├── .claude/skills/      # Claude Code symlink（自动同步）
-├── .codex/skills/       # Codex symlink（自动同步）
+├── .codex/skills/       # Codex legacy symlink（兼容旧版本）
 └── .cursor/rules/       # Cursor 配置
 ```
 
@@ -37,13 +37,13 @@ fe-skills/
 | `scripts/` | 技能管理 CLI（create/add/remove/update/convert/validate） |
 | `templates/` | `npm run create-skill` 使用的模板 |
 | `.claude/skills/` | Claude Code 技能加载目录（自动同步） |
-| `.codex/skills/` | Codex 技能加载目录（自动同步） |
+| `.codex/skills/` | Codex 旧版兼容目录；当前 `npx skills --agent codex` 默认使用 `.agents/skills/` |
 
 ### 各层职责
 
 - **技能层**: `skills/<name>/SKILL.md` — AI 指令的源文件
 - **管理层**: `scripts/*.js` — 技能生命周期管理
-- **注册层**: `.claude/skills/` / `.codex/skills/` — 各 AI 工具的加载入口
+- **注册层**: `.agents/skills/` / `.claude/skills/` / `.codex/skills/` — `npx skills` 通用入口、Claude Code 入口和 Codex 旧版兼容入口
 
 ## 关键架构决策（ADR）
 
@@ -60,7 +60,7 @@ fe-skills/
 - **日期**: 2026-05-22
 - **状态**: 接受
 - **背景**: symlink 在新增/删除 skill 时需手动管理，容易遗漏
-- **选择**: 通过 `scripts/sync-agent-links.js` 自动扫描 `skills/` 并同步到 `.claude/skills/` 和 `.codex/skills/`
+- **选择**: 通过 `scripts/sync-agent-links.js` 自动扫描 `skills/` 并同步到 `.claude/skills/`，同时保留 `.codex/skills/` 作为旧版兼容链接
 - **结果**: 新增 skill 时自动创建 symlink，删除 skill 时自动清理，prepare 脚本确保 clone 后自动建立
 
 ## 外部依赖

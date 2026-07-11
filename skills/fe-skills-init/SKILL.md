@@ -1,6 +1,6 @@
 ---
 name: fe-skills-init
-description: 安装 fe-skills 后的一站式初始化。自动同步 skills 到各 AI 平台目录，创建/合并 .claude/settings.local.json 权限配置，让所有 skill 开箱即用。
+description: 安装 fe-skills 后的一站式初始化。将 skills 同步到 Claude Code 目录，创建/合并 .claude/settings.local.json 权限配置，让所有 skill 开箱即用。
 ---
 
 # fe-skills-init
@@ -8,7 +8,7 @@ description: 安装 fe-skills 后的一站式初始化。自动同步 skills 到
 在 `npx skills add Jsmond2016/fe-skills` 后执行，一次完成所有后续配置：
 
 1. **状态检测** — 检查安装、同步、权限配置现状
-2. **同步到平台目录** — 将 `.agents/skills/` 链接到 `.claude/skills/`、`.codex/skills/`
+2. **同步到 Claude Code 目录** — 将 `.agents/skills/` 链接到 `.claude/skills/`
 3. **配置权限** — 创建或合并 `.claude/settings.local.json`，预授权 skill 所需命令
 4. **验证** — 确认结果
 
@@ -32,7 +32,6 @@ ls .agents/skills/ 2>/dev/null && echo "✅ .agents/skills/ 存在"
 
 # 检查同步状态
 ls .claude/skills/ 2>/dev/null && echo "✅ .claude/skills/ 存在"
-ls .codex/skills/ 2>/dev/null && echo "✅ .codex/skills/ 存在"
 
 # 检查权限配置
 cat .claude/settings.local.json 2>/dev/null || echo "⬜ .claude/settings.local.json 不存在"
@@ -54,7 +53,7 @@ cat skills-lock.json 2>/dev/null || echo "⬜ skills-lock.json 不存在（未�
 如果检测到未安装状态，提示用户先执行：
 
 ```bash
-npx skills add Jsmond2016/fe-skills --all -y
+npx skills add Jsmond2016/fe-skills --skill '*' --agent codex -y
 ```
 
 然后重新运行本 skill（`/fe-skills-init`）。
@@ -80,11 +79,10 @@ fi
 > 如果 sync 脚本不存在，可能是 `.agents/skills/` 结构不同。此时可手动创建 symlink：
 >
 > ```bash
-> mkdir -p .claude/skills .codex/skills
+> mkdir -p .claude/skills
 > for skill in .agents/skills/*/; do
 >   name=$(basename "$skill")
 >   [ -f "$skill/SKILL.md" ] && ln -sf "../../.agents/skills/$name" ".claude/skills/$name"
->   [ -f "$skill/SKILL.md" ] && ln -sf "../../.agents/skills/$name" ".codex/skills/$name"
 > done
 > ```
 
@@ -93,12 +91,9 @@ fi
 ```bash
 echo "=== .claude/skills/ ==="
 ls .claude/skills/ 2>/dev/null | head -20
-
-echo "=== .codex/skills/ ==="
-ls .codex/skills/ 2>/dev/null | head -20
 ```
 
-目标：每个 `.agents/skills/*/SKILL.md` 对应的 skill 在 `.claude/skills/` 和 `.codex/skills/` 中都有同名的 symlink。
+目标：每个 `.agents/skills/*/SKILL.md` 对应的 skill 在 `.claude/skills/` 中都有同名的 symlink。当前 Codex project-level skills 由 `npx skills --agent codex` 直接记录在 `.agents/skills/`，无需额外创建 `.codex/skills/`。
 
 ---
 
@@ -206,7 +201,7 @@ npx skills list --json 2>/dev/null | node -pe "
 
 echo ""
 echo "=== 平台目录状态 ==="
-for dir in .agents .claude .codex; do
+for dir in .agents .claude; do
   skills_count=$(ls "$dir/skills" 2>/dev/null | wc -l | tr -d ' ')
   echo "  $dir/skills/: ${skills_count:-0} skills"
 done
@@ -226,7 +221,6 @@ cat .claude/settings.local.json 2>/dev/null && echo "" || echo "  ⬜ 未配置"
 ├─────────────────────────────────┤
 │ ✅ Skills 已安装: 24            │
 │ ✅ .claude/skills/ 已同步: 24   │
-│ ✅ .codex/skills/ 已同步: 24    │
 │ ✅ 权限已配置 (23 条规则)        │
 │                                │
 │ 系统占用: Skills +2.5MB         │

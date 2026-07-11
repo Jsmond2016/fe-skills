@@ -18,14 +18,18 @@
 在项目根目录执行：
 
 ```bash
-npx skills add Jsmond2016/fe-skills --all
+npx skills add Jsmond2016/fe-skills --skill '*' --agent codex -y
 ```
 
-这会在当前项目下创建 `.agents/skills` 目录，Skill 仅在该项目中可用。
+这会在当前项目下创建 `.agents/skills` 目录，并将所有 skill 安装为 Codex project-level skills。Skill 仅在该项目中可用。
+
+> 不建议使用 `--all` 作为默认安装方式；它等价于安装到所有支持的 agent，可能额外生成 `agent/skills` 等当前项目并不需要的目录。
 
 ### 安装后的同步
 
-`npx skills add` 将 skills 安装到 `.agents/skills/` 目录，但 Claude Code 识别 `.claude/skills/`，Codex 识别 `.codex/skills/`。安装完成后，推荐执行 **`/fe-skills-init`** 一键完成所有后续配置：
+`npx skills add --agent codex` 会将 Codex 使用的 project-level skills 安装到 `.agents/skills/`，通常不需要再创建 `.codex/skills/`。
+
+如果还需要在 Claude Code 中使用同一批 skills，安装完成后推荐执行 **`/fe-skills-init`** 一键完成 Claude Code 侧配置：
 
 ```bash
 # 在 Claude Code 中执行
@@ -33,7 +37,7 @@ npx skills add Jsmond2016/fe-skills --all
 ```
 
 该 skill 会自动：
-1. 将 skills 同步到 `.claude/skills/`、`.codex/skills/`
+1. 将 skills 同步到 `.claude/skills/`
 2. 创建/合并 `.claude/settings.local.json` 权限配置
 3. 验证并输出配置报告
 
@@ -41,6 +45,12 @@ npx skills add Jsmond2016/fe-skills --all
 
 ```bash
 node .agents/skills/sync-agent-skills/scripts/sync.cjs
+```
+
+如需兼容旧版 Codex 读取 `.codex/skills/` 的场景，可显式执行：
+
+```bash
+node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform codex
 ```
 
 ### 全局安装（所有项目）
@@ -93,7 +103,7 @@ npx skills update fe-code-review fe-commit -y
 
 ```bash
 # 重新拉取并覆盖安装所有 skill（等价于"删除→重装"一步完成）
-npx skills add Jsmond2016/fe-skills --all -y
+npx skills add Jsmond2016/fe-skills --skill '*' --agent codex -y
 ```
 
 ### 全局更新
@@ -108,10 +118,10 @@ npx skills update -g -y
 
 ```bash
 # 第一次安装：使用本地路径
-npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
+npx skills add /Users/huangjin/Desktop/github/fe-skills --skill '*' --agent codex -y
 
 # fe-skills 有本地修改后，重新覆盖安装
-npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
+npx skills add /Users/huangjin/Desktop/github/fe-skills --skill '*' --agent codex -y
 ```
 
 > **注意**：`npx skills update` 从 GitHub 拉取最新版，本地未 push 的改动不会被包含。本地开发阶段建议用上面的路径覆盖方式。
@@ -199,7 +209,7 @@ EOF
 | [fe-setup-basic-project-env](./skills/fe-setup-basic-project-env) | 通用项目基础环境配置（pnpm + ESLint + Prettier + AGENTS.md） |
 | [fe-setup-vsc-config-plugin](./skills/fe-setup-vsc-config-plugin) | VS Code 扩展工程化配置（ESLint + Prettier + Husky + CI 打包）|
 | [fe-tailwindcss](./skills/fe-tailwindcss) | TailwindCSS 开发指南 |
-| [sync-agent-skills](./skills/sync-agent-skills) | 将 `.agents/skills/` 中已安装的 skills 同步到 `.claude/skills/`、`.codex/skills/` |
+| [sync-agent-skills](./skills/sync-agent-skills) | 将 `.agents/skills/` 中已安装的 skills 同步到需要额外注册目录的 AI 平台（默认 Claude Code） |
 | [sys-port-manager](./skills/sys-port-manager) | 跨平台端口管理工具（macOS/Linux），portctl CLI |
 
 > 第三方 Skill（通过 `npm run add-skill` 安装）
@@ -322,7 +332,7 @@ fe-skills/
 **解决**：先执行一次安装：
 
 ```bash
-npx skills add Jsmond2016/fe-skills --all -y
+npx skills add Jsmond2016/fe-skills --skill '*' --agent codex -y
 ```
 
 后续即可使用 `npx skills update -y` 更新。
@@ -349,7 +359,7 @@ npx skills update Jsmond2016/fe-skills -y
 **解决**：本地开发阶段，改用本地路径覆盖安装：
 
 ```bash
-npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
+npx skills add /Users/huangjin/Desktop/github/fe-skills --skill '*' --agent codex -y
 ```
 
 ### 本地 skills 已删除，如何重新找回？
@@ -357,7 +367,7 @@ npx skills add /Users/huangjin/Desktop/github/fe-skills -y --all
 直接重新添加即可：
 
 ```bash
-npx skills add Jsmond2016/fe-skills --all -y
+npx skills add Jsmond2016/fe-skills --skill '*' --agent codex -y
 ```
 
 这会重新从 GitHub 拉取所有 skill 并安装到 `.agents/skills/`。

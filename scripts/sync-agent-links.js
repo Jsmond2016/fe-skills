@@ -3,8 +3,8 @@
 /**
  * sync-agent-links.js
  *
- * 同步 skills/ → .claude/skills/ 和 .codex/skills/ 的 symlink。
- * 在 create / add / remove skill 后自动调用，确保三种 AI 工具始终加载最新 skill 列表。
+ * 同步 skills/ → .claude/skills/，并保留 .codex/skills/ legacy symlink。
+ * 在 create / add / remove skill 后自动调用，确保本仓库开发环境加载最新 skill 列表。
  */
 
 const fs = require('fs');
@@ -20,7 +20,7 @@ function showHelp() {
   console.log(`
 Usage: node scripts/sync-agent-links.js [--dry-run]
 
-Sync skills/ symlinks to .claude/skills/ and .codex/skills/.
+Sync skills/ symlinks to .claude/skills/ and legacy .codex/skills/.
 
 Options:
   --dry-run    Show what would change without making changes
