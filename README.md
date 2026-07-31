@@ -1,6 +1,6 @@
 # FE Skills
 
-> **更新时间**：2026-07-11；**使用模型**：GPT-5；**用户**：jsmond2016
+> **更新时间**：2026-07-31；**使用模型**：Claude；**用户**：jsmond2016
 
 ---
 
@@ -55,33 +55,26 @@ node .agents/skills/sync-agent-skills/scripts/sync.cjs --platform codex
 
 ### 全局安装（所有项目）
 
-#### 方式一：使用 npx skills CLI
+> **注意**：`npx skills` CLI（v1.5+）的 `--global` 是**按 agent 分区**安装到各自的用户级目录，已不再使用 `~/.skills/`。建议显式指定目标 agent：
 
 ```bash
-npx skills add --global Jsmond2016/fe-skills
+# 全局安装到 Claude Code（所有项目可用）
+npx skills add --global Jsmond2016/fe-skills --agent claude-code -y
+
+# 全局安装到 Codex（所有项目可用）
+npx skills add --global Jsmond2016/fe-skills --agent codex -y
 ```
 
-这会安装到 `~/.skills/` 目录，所有项目均可使用。
+不带 `--agent` 时，CLI 会检测本机已安装的 agent CLI 并自动选择（多个时交互式询问，可加 `-y` 跳过）。各 agent 的全局目录：
 
-#### 方式二：手动配置
+| Agent | 全局目录 | 识别方式 |
+|-------|----------|----------|
+| Claude Code | `~/.claude/skills/` | 原生识别，所有项目自动可用 |
+| Codex | `~/.codex/skills/` | 原生识别，所有项目自动可用 |
 
-```bash
-# 1. 克隆仓库
-git clone https://github.com/Jsmond2016/fe-skills.git ~/.skills/fe-skills
+> **手动方式**：将仓库克隆到本地后，把 `skills/` 下的 skill 目录 symlink 到对应 agent 的全局目录即可。详见 [npx-skills 全局安装使用说明](./docs/knowledge/npx-skills全局安装使用说明.md)。
 
-# 2. 在 Claude Code 全局配置中添加 skills 路径
-# 编辑 ~/.claude/settings.json，添加：
-```
-
-```json
-{
-  "skills": {
-    "paths": ["~/.skills/fe-skills/skills"]
-  }
-}
-```
-
-> **Cursor 用户**：在 Cursor 的设置中配置 Skills Path（设置路径 -> Features -> Skills Path），指向 `~/.skills/fe-skills/skills`。
+> **Cursor 用户**：在 Cursor 的设置中配置 Skills Path（设置路径 -> Features -> Skills Path），指向本仓库 `skills` 目录。
 
 ## 更新
 
@@ -199,7 +192,10 @@ EOF
 | [fe-skills-init](./skills/fe-skills-init) | 安装 fe-skills 后的一站式初始化 — 自动同步 skills 到各 AI 平台目录，配置权限，开箱即用 |
 | [fe-code-review](./skills/fe-code-review) | 系统性代码审查，覆盖架构、质量、错误处理、性能、安全、测试 |
 | [fe-commit](./skills/fe-commit) | Commit 提交规范与 Changelog 生成 |
+| [fe-dev-with-doc](./skills/fe-dev-with-doc) | 以分支绑定的 specs/ 需求文档与开发方案文档为源头驱动开发 |
+| [fe-dev-update-doc-by-commit](./skills/fe-dev-update-doc-by-commit) | 按已提交代码回补分支绑定的需求/开发文档记录 |
 | [fe-doc-format](./skills/fe-doc-format) | 文档编写规范化（需求/技术/接口/项目文档） |
+| [fe-docs-summary](./skills/fe-docs-summary) | AI 解决过程总结 — 记录"问题 → 过程 → 方案"全链路到 /docs |
 | [fe-fullstack-dev](./skills/fe-fullstack-dev) | Full Stack Monorepo 全栈开发最佳实践 |
 | [fe-large-file-refactor](./skills/fe-large-file-refactor) | 大文件自动检测与重构（JS/TS/Vue，超 450 行触发） |
 | [fe-node-dev-stack](./skills/fe-node-dev-stack) | Node.js 开发栈实践 |
@@ -278,9 +274,6 @@ npm run create-skill
 
 # 命令行参数创建
 npm run create-skill -- --name my-skill --description "My skill description"
-
-# 指定目录名（可选，默认与 name 一致）
-npm run create-skill -- --name my-skill --dir my-skill --description "My skill description"
 ```
 
 ### 验证 Skill 格式
@@ -294,8 +287,8 @@ npm run validate
 ```
 fe-skills/
 ├── skill-dependencies.json  # Vendor skill 依赖 manifest（自动维护）
-├── skills/                  # Skill 集合（23 个）
-│   ├── fe-*/                # 前端自有 skill（fe-code-review、fe-commit 等 13 个）
+├── skills/                  # Skill 集合（27 个）
+│   ├── fe-*/                # 前端自有 skill（fe-code-review、fe-commit 等 17 个）
 │   ├── sync-agent-skills/   # 工具 skill：.agents/ → AI 平台目录同步
 │   │   ├── SKILL.md
 │   │   └── scripts/

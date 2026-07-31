@@ -17,7 +17,7 @@ description: 通用项目基础环境配置 — pnpm、ESLint、Prettier、Git�
 ## 设计原则
 
 1. **无侵入性**：基础配置，不绑定任何前端/后端框架
-2. **可叠加性**：其他技术栈 skill（如 `fe-react-stack`、`fe-node-dev-stack`）在此基础上追加专属配置
+2. **可叠加性**：其他技术栈 skill（如 `fe-react-dev-stack`、`fe-node-dev-stack`）在此基础上追加专属配置
 3. **快速落地**：提供可直接复制使用的配置文件模板
 4. **AI 友好**：内置 Agents.md 规范，让人与 AI 的协作有章可循
 
@@ -927,7 +927,7 @@ node scripts/init-agents-md.cjs
 |:------|:-----|:----------------|
 | `fe-commit` | Commit 规范 + CHANGELOG 生成 | 本 skill 引用其规范，不重复实现 |
 | `fe-setup-vsc-config-plugin` | VS Code 扩展专属工程化配置 | 本 skill 提供通用基础，其提供扩展专属流程及 CI 打包 |
-| `fe-react-stack` / `fe-node-dev-stack` | 具体技术栈开发规范 | 在本 skill 基础配置上叠加技术栈专属规则 |
+| `fe-react-dev-stack` / `fe-node-dev-stack` | 具体技术栈开发规范 | 在本 skill 基础配置上叠加技术栈专属规则 |
 
 ---
 

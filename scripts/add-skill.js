@@ -209,7 +209,7 @@ ${body}
 
 // ── Install from URL ──
 
-function installFromUrl(url, nameOverride, dryRun) {
+function installFromUrl(url, nameOverride, dryRun, opts = {}) {
   const rawUrl = validateHttpUrl(toRawGithubUrl(url));
 
   console.log(`Fetching ${rawUrl}...`);
@@ -254,7 +254,7 @@ function installFromUrl(url, nameOverride, dryRun) {
         const { body: existingBody } = parseFrontmatter(existingContent);
         if (existingBody === body) {
           console.log(`  ✓ ${skillName} is already up-to-date`);
-          return true;
+          return 'up-to-date';
         }
         console.log(`  ~ ${skillName} has changed upstream, updating...`);
       }
@@ -267,7 +267,7 @@ function installFromUrl(url, nameOverride, dryRun) {
 
   if (dryRun) {
     console.log(`  ~ ${skillName} (would install from URL)`);
-    return true;
+    return 'dry-run';
   }
 
   // Clean frontmatter (strip model-specific fields)
@@ -303,17 +303,19 @@ syncedAt: ${new Date().toISOString()}
   generateAdapters(destDir, skillName, desc, body);
 
   // Update manifest (version 2: url source)
-  const manifest = readManifest();
-  if (!manifest.url) manifest.url = {};
-  if (!manifest.url[rawUrl]) manifest.url[rawUrl] = { installedSkills: {} };
-  manifest.url[rawUrl].installedSkills[skillName] = {
-    name: skillName,
-    syncedAt: new Date().toISOString(),
-  };
-  writeManifest(manifest);
+  if (!opts.skipManifestWrite) {
+    const manifest = readManifest();
+    if (!manifest.url) manifest.url = {};
+    if (!manifest.url[rawUrl]) manifest.url[rawUrl] = { installedSkills: {} };
+    manifest.url[rawUrl].installedSkills[skillName] = {
+      name: skillName,
+      syncedAt: new Date().toISOString(),
+    };
+    writeManifest(manifest);
+  }
 
   console.log(`  ✓ ${skillName} installed`);
-  return true;
+  return 'installed';
 }
 
 // ── Install from GitHub ──
@@ -362,7 +364,7 @@ function installFromGithub(repo, targetSkill, dryRun) {
     process.exit(1);
   }
 
-  return exitCode;
+  return exitCode === 0;
 }
 
 function installGithubSkill(skill, repo, commitHash, repoDir, dryRun) {
@@ -468,4 +470,11 @@ function main() {
   process.exit(ok ? 0 : 1);
 }
 
-main();
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { installFromUrl };

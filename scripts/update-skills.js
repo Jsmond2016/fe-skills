@@ -6,6 +6,7 @@ const { execFileSync, execSync } = require('child_process');
 const { resolveInside, validateGithubRepo, validateSkillName } = require('./lib/security');
 const { replaceDirectory } = require('./lib/files');
 const { readManifest: readManifestFile } = require('./lib/manifest');
+const { installFromUrl } = require('./add-skill');
 
 const ROOT = path.resolve(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
@@ -42,8 +43,9 @@ async function main() {
   const manifest = readManifest();
   const githubEntries = manifest.github || {};
   const repos = Object.keys(githubEntries);
+  const urlKeys = Object.keys(manifest.url || {});
 
-  if (repos.length === 0) {
+  if (repos.length === 0 && urlKeys.length === 0) {
     console.log('No vendor skills to update.');
     return;
   }
@@ -139,6 +141,33 @@ async function main() {
         fs.rmSync(tempDir, { recursive: true });
       }
       failed++;
+    }
+  }
+
+  // URL-sourced skills（通过 HTTP 抓取原始 SKILL.md，有变更时重新安装）
+  for (const url of urlKeys) {
+    const entry = manifest.url[url];
+    const skills = Object.keys(entry.installedSkills || {});
+    if (skills.length === 0) continue;
+
+    console.log(`\nChecking ${url}...`);
+    for (const skillName of skills) {
+      try {
+        const status = installFromUrl(url, null, false, { skipManifestWrite: true });
+        if (status === 'installed') {
+          // installFromUrl 负责更新 SKILL.md / ORIGINAL.md / GENERATION.md / adapters，
+          // 此处仅记录同步时间（manifest 由本函数在最后统一写入）
+          entry.installedSkills[skillName].syncedAt = new Date().toISOString();
+          updated++;
+        } else if (status === 'up-to-date') {
+          upToDate++;
+        } else {
+          failed++;
+        }
+      } catch (err) {
+        console.error(`  ✗ Failed to update ${skillName}: ${err.message}`);
+        failed++;
+      }
     }
   }
 
