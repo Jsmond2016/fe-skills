@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FE-Skills — 前端开发 Skills 集合，兼容 npx skills CLI。本项目自身是 skill 仓库，包含大量前端相关 skill（代码审查、提交规范、React 开发栈、TailwindCSS、项目管理等），同时也管理第三方 vendor skill。
+FE-Skills 是一个个人 skill 仓库，集中管理自研 skill、导入的第三方 skill 和平台适配物。`skills/` 保持平铺结构以兼容现有 CLI，而 `CATALOG.md` 是归属、来源和维护方式的总索引。
 
 ## Project Structure
 
 - `skills/<skill-name>/SKILL.md` — 每个 skill 一个子目录，以 SKILL.md 为入口（YAML frontmatter 定义 name + description）
+- `CATALOG.md` — 仓库级 skill 索引，说明类别、来源和维护方式
 - `scripts/` — skill 管理工具（create/add/remove/update/convert/validate）
 - `templates/skill/` — 新 skill 模板
 - `skill-dependencies.json` — 第三方 vendor skill 依赖清单
@@ -70,5 +71,5 @@ node .agents/skills/sync-agent-skills/scripts/sync.cjs --copy            # 复�
 - `skills/<name>/SKILL.md` — YAML frontmatter 含 `name`（kebab-case）+ `description`
 - description 首段出现在 skill 选择列表中，宜简短明了
 - 创建新 skill：`npm run create-skill`（交互式）或手动创建
-- 第三方 vendor skill 保留 `ORIGINAL.md` + `GENERATION.md`
+- 第三方 vendor skill 保留 `ORIGINAL.md` + `GENERATION.md`，并同步更新 `CATALOG.md`
 - 多平台适配：`npm run convert-skill <name>`

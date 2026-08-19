@@ -47,6 +47,15 @@ npm run create-skill -- --name my-skill --description "My skill description"
 
 3. 确保目录名与 frontmatter 中的 `name` 完全一致
 
+### 导入开源 Skill
+
+如果 skill 来自外部仓库，建议按下面的顺序处理：
+
+1. 先把来源信息记录到 [CATALOG.md](../CATALOG.md)
+2. 保留 `ORIGINAL.md` 和 `GENERATION.md`
+3. 如需多平台适配，再生成 `adapters/`
+4. 再决定是否做本地定制，避免丢失上游出处
+
 ## Skill 编写规范
 
 ### YAML Frontmatter（必填）

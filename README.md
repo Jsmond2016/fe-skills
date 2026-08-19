@@ -4,7 +4,16 @@
 
 ---
 
-前端开发 Skills 集合，兼容 [Vercel Labs Skills CLI](https://github.com/vercel-labs/skills)。安装后可在 Claude Code、Cursor 等 50+ AI Agent 工具中使用。
+这是一个个人 skill 仓库，用来集中管理自研 skill、导入的开源 skill，以及跨平台适配物。目录保持平铺，以兼容 [Vercel Labs Skills CLI](https://github.com/vercel-labs/skills) 和现有 agent 读取方式。
+
+完整分层索引见 [CATALOG.md](./CATALOG.md)。
+
+## 仓库分层
+
+- `skills/`：实际可用的 skill 包
+- `CATALOG.md`：归属、来源、维护方式索引
+- `skill-dependencies.json`：第三方 skill 的机器可读清单
+- `skills/*/ORIGINAL.md` + `GENERATION.md`：第三方来源保留记录
 
 ## 前提条件
 
@@ -286,6 +295,7 @@ npm run validate
 
 ```
 fe-skills/
+├── CATALOG.md              # skill 归属与来源索引
 ├── skill-dependencies.json  # Vendor skill 依赖 manifest（自动维护）
 ├── skills/                  # Skill 集合（27 个）
 │   ├── fe-*/                # 前端自有 skill（fe-code-review、fe-commit 等 17 个）
