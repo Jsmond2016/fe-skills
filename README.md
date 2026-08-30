@@ -1,6 +1,6 @@
 # FE Skills
 
-> **更新时间**：2026-07-31；**使用模型**：Claude；**用户**：jsmond2016
+> **更新时间**：2026-08-30；**使用模型**：GPT-5；**用户**：jsmond2016
 
 ---
 
@@ -226,6 +226,9 @@ EOF
 > | [frontend-design](./skills/frontend-design) | anthropics/skills | 创建高品质前端界面，避免 AI 同质化审美 |
 > | [grill-me](./skills/grill-me) | mattpocock/skills | 对计划/设计进行追问式讨论，直至达成共识 |
 > | [grill-with-docs](./skills/grill-with-docs) | mattpocock/skills | 结合领域模型的批判性讨论，联动文档更新 |
+> | [java-junit](./skills/java-junit) | github/awesome-copilot | JUnit 5 单元测试与参数化测试实践 |
+> | [java-springboot](./skills/java-springboot) | github/awesome-copilot | Spring Boot 应用开发最佳实践 |
+> | [spring-boot-testing](./skills/spring-boot-testing) | github/awesome-copilot | Spring Boot 单元、切片与集成测试 |
 > | [tdd](./skills/tdd) | mattpocock/skills | 测试驱动开发（红-绿-重构循环） |
 > | [to-issues](./skills/to-issues) | mattpocock/skills | 将计划/PRD 拆解为可独立领取的 Issue |
 > | [write-a-skill](./skills/write-a-skill) | mattpocock/skills | 创建符合结构的 Agent Skill |

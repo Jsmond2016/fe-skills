@@ -65,6 +65,30 @@
           "syncedAt": "2026-05-26T03:36:00.057Z"
         }
       }
+    },
+    "https://raw.githubusercontent.com/github/awesome-copilot/main/skills/java-springboot/SKILL.md": {
+      "installedSkills": {
+        "java-springboot": {
+          "name": "java-springboot",
+          "syncedAt": "2026-08-30T10:44:37.274Z"
+        }
+      }
+    },
+    "https://raw.githubusercontent.com/github/awesome-copilot/main/skills/spring-boot-testing/SKILL.md": {
+      "installedSkills": {
+        "spring-boot-testing": {
+          "name": "spring-boot-testing",
+          "syncedAt": "2026-08-30T10:44:45.813Z"
+        }
+      }
+    },
+    "https://raw.githubusercontent.com/github/awesome-copilot/main/skills/java-junit/SKILL.md": {
+      "installedSkills": {
+        "java-junit": {
+          "name": "java-junit",
+          "syncedAt": "2026-08-30T10:44:56.135Z"
+        }
+      }
     }
   }
 }

@@ -36,6 +36,9 @@
 | `frontend-design` | 第三方 | `anthropics/skills` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | 高品质前端界面设计 |
 | `grill-me` | 第三方 | `mattpocock/skills` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | 追问式讨论与方案校验 |
 | `grill-with-docs` | 第三方 | `mattpocock/skills` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | 结合文档的批判性讨论 |
+| `java-junit` | 第三方 | `github/awesome-copilot` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | JUnit 5 单元测试与参数化测试 |
+| `java-springboot` | 第三方 | `github/awesome-copilot` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | Spring Boot 应用开发最佳实践 |
+| `spring-boot-testing` | 第三方 | `github/awesome-copilot` | 保留 `ORIGINAL.md` + `GENERATION.md`、测试参考资料及 adapters | Spring Boot 单元、切片与集成测试 |
 | `tdd` | 第三方 | `mattpocock/skills` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | 测试驱动开发 |
 | `to-issues` | 第三方 | `mattpocock/skills` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | 计划拆解为 Issues |
 | `write-a-skill` | 第三方 | `mattpocock/skills` | 保留 `ORIGINAL.md` + `GENERATION.md`，必要时同步 adapters | 创建符合结构的 skill |
