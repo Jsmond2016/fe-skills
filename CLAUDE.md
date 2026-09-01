@@ -44,6 +44,8 @@ npm run validate       # / npm test — 校验所有 skill
 - `npm run create-skill` / `add-skill` / `remove-skill` 执行后
 - `npm install` 或 `npm prepare` 执行时（含 `git clone` 后自动执行）
 
+`npm install` 还会通过 `preinstall` 自动执行 `npm run update-skills`，在安装依赖前检查并更新 `skill-dependencies.json` 中记录的第三方 skill。
+
 ## 消费端：从 .agents/skills/ 同步到平台目录
 
 `skills/sync-agent-skills/` 是一个工具 skill，内置了同步脚本。当前 Codex 可直接使用 `npx skills add --agent codex` 生成的 `.agents/skills/`；该脚本默认只解决 Claude Code 需要 `.claude/skills/` 的同步问题。`.codex/skills/` 仅在旧版兼容场景下显式同步。

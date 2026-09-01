@@ -261,6 +261,8 @@ npm run convert-skill code-simplifier         # 查看 adapter 状态
 npm run convert-skill code-simplifier --platform all   # 生成所有平台适配器
 ```
 
+运行 `npm install` 时会在安装依赖前自动执行 `npm run update-skills`，检查并更新清单中的所有第三方 skill；网络不可用或单个来源失败时会保留现有文件并输出失败项，不阻断依赖安装。
+
 ### 多模型适配
 
 从 URL 安装的 skill 会自动生成**多平台适配器**，存放在 `skills/<name>/adapters/` 下：
